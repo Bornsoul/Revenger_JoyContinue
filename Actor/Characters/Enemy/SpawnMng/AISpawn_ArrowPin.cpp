@@ -7,28 +7,48 @@ UAISpawn_ArrowPin::UAISpawn_ArrowPin()
 {
 	ArrowSize = 3.0f;
 	ArrowColor = FColor(255.0f, 0.0f, 0.0f, 255.0f);
+
+	for (int i = 0; i < 4; i++)
+	{
+		FDifficultArrow stDifficult;
+		stDifficult.m_eDifficult = static_cast<eDifficultArrow>(i);
+		m_pInstance_Arrow.Add(stDifficult);
+	}
 }
 
 int UAISpawn_ArrowPin::GetMaxPhase()
 {
-	return m_pInstance_AI.Num();
+	if (m_nDifficulty < 0) return -1;
+
+	return m_pInstance_Arrow[m_nDifficulty].m_pInstance_AI.Num();
 }
 
 void UAISpawn_ArrowPin::SpawnAI(int nPhaseNum)
 {
 	m_pCurrentAI = nullptr;
+	if (m_nDifficulty < 0) return;
 	if (nPhaseNum >= GetMaxPhase()) return;
 	if (nPhaseNum < 0) return;
-	if (nPhaseNum >= m_pInstance_AI.Num()) return;
-	if (m_pInstance_AI[nPhaseNum] == nullptr) return;
+	if (nPhaseNum >= m_pInstance_Arrow[m_nDifficulty].m_pInstance_AI.Num()) return;
+	if (m_pInstance_Arrow[m_nDifficulty].m_pInstance_AI[nPhaseNum] == nullptr) return;
 
-	AGameCharacter* pAI = GetWorld()->SpawnActor<AGameCharacter>(m_pInstance_AI[nPhaseNum], GetComponentLocation(), GetComponentRotation());
+	AGameCharacter* pAI = GetWorld()->SpawnActor<AGameCharacter>(m_pInstance_Arrow[m_nDifficulty].m_pInstance_AI[nPhaseNum], GetComponentLocation(), GetComponentRotation());
 	if (pAI == nullptr) return;
-
 	pAI->SetActorLocation(GetComponentLocation());
 	pAI->SetActorRotation(GetComponentRotation());
 
 	m_pCurrentAI = pAI;
+}
+
+void UAISpawn_ArrowPin::SetDifficulty(int32 nDifficulty)
+{
+	if (nDifficulty < 0)
+	{
+		UALERT(TEXT("AI SpawnPin Difficulty is Not Valid"));
+		return;
+	}
+	
+	m_nDifficulty = nDifficulty;	
 }
 
 bool UAISpawn_ArrowPin::CheckAILife()

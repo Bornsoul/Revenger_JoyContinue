@@ -43,9 +43,9 @@ private:
 
 	UPROPERTY()
 		class UCpt_WarningSpace* m_pWarningSpace;
-
-	UPROPERTY()
-		class UCpt_EnemyHp* m_pHp;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Property", meta = (AllowPrivateAccess = "true"))
+		class UCpt_EnemyHpComponent* m_pHpHud;
 
 public:
 	FORCEINLINE class UAnimInst_EnemyE3* GetAnimInstance() { return m_pAnimInstance; }
@@ -62,13 +62,7 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = Option)
 		float m_fCurrentHp = 2.0f;
-
-	UPROPERTY(EditAnywhere, Category = HpBar)
-		FVector m_vHpPos = FVector(40.0f, 40.0f, 40.0f);
-
-	UPROPERTY(EditAnywhere, Category = HpBar)
-		FVector2D m_vHpSize = FVector2D(40.0f, 40.0f);
-
+	
 	bool m_bHpDestroy = false;
 
 public:

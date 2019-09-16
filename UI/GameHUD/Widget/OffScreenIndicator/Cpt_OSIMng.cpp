@@ -111,6 +111,7 @@ void UCpt_OSIMng::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 				
 				m_pPinList[i]->SetPositionInViewport(vScreenLoc);
 				m_pPinList[i]->SetRenderAngle(fRotation);
+				m_pPinList[i]->GetIconImage()->SetRenderAngle(1-fRotation);
 				//m_pPinList[i]->GetIconImage()->SetRenderAngle(fRot);
 			}
 			else
@@ -145,7 +146,7 @@ void UCpt_OSIMng::DestroyPin()
 	{
 		m_pPinList[i]->SetShow(false);		
 	}
-
+	
 	m_pPinList.Empty();
 	DestroyComponent();
 }

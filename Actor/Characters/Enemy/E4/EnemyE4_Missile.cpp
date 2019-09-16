@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "EnemyE4_Missile.h"
+#include "Actor/SaveData/Cpt_GameSave.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SphereComponent.h"
 #include "Libraries/Components/ParticleMng/Cpt_ParticleMng.h"
@@ -24,6 +25,9 @@ AEnemyE4_Missile::AEnemyE4_Missile()
 	m_pParticleMng = CreateDefaultSubobject<UCpt_ParticleMng>(TEXT("ParticleMng"));
 	m_pParticleMng->AddParticleInstance(TEXT("Explosion"), TEXT("ParticleSystem'/Game/1_Project_Main/2_Contents/Effects/Ex/StandardExplosion/P_Explosion_Small.P_Explosion_Small'"));
 	m_pParticleMng->AddParticleInstance(TEXT("Trail"), TEXT("ParticleSystem'/Game/0_Assets/MarketPlace/VFXS/VFX_Toolkit_V1/ParticleSystems/356Days/Par_Matra_01b_Trail.Par_Matra_01b_Trail'"));
+
+	//m_pSaveData = CreateDefaultSubobject<UCpt_GameSave>(TEXT("SaveData"));
+
 }
 
 void AEnemyE4_Missile::BeginPlay()
@@ -33,7 +37,7 @@ void AEnemyE4_Missile::BeginPlay()
 	m_bReflected = false;
 	m_bReflectWaitTime = false;
 	m_bChase = false;
-
+	m_bSuccessHit = false;
 	//m_pParticleMng->SpawnParticleAttachComponent(TEXT("Trail"), m_pMesh, NAME_None);
 }
 
@@ -142,6 +146,7 @@ void AEnemyE4_Missile::Reflect(FVector vDestLoc)
 	FVector vLocation = GetActorLocation();
 	FRotator rView = UKismetMathLibrary::FindLookAtRotation(vLocation, vDestLoc);
 	SetActorRotation(rView);
+	m_bSuccessHit = true;
 	//ULOG(TEXT("Ref"));
 }
 
@@ -152,6 +157,8 @@ float AEnemyE4_Missile::TakeDamage(float DamageAmount, struct FDamageEvent const
 	FDamageEvent_Hit* pDamageEvent = (FDamageEvent_Hit*)&DamageEvent;
 	if (pDamageEvent != nullptr)
 	{
+		//m_pSaveData->Load_Data()->m_stPlayerData.m_nHitBulletCount += 1;
+
 		m_pDamageCauser = DamageCauser;
 		Reflect(pDamageEvent->m_vHitPoint);
 		m_fReflectDamage = DamageAmount;
@@ -162,6 +169,7 @@ float AEnemyE4_Missile::TakeDamage(float DamageAmount, struct FDamageEvent const
 
 void AEnemyE4_Missile::Explosion()
 {
+	//m_pSaveData->Save_Data("Test01", 0, -1.0f);
 	m_pParticleMng->SpawnParticleAtLocation(TEXT("Explosion"), GetWorld(), GetActorLocation(), FRotator::ZeroRotator, FVector::OneVector);
 	Destroy();
 }
@@ -189,7 +197,7 @@ void AEnemyE4_Missile::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp,
 		{
 			if (m_bReflected == true)
 			{
-
+				return;
 			}
 			else
 			{
@@ -203,6 +211,12 @@ void AEnemyE4_Missile::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp,
 		}
 		else
 		{
+			//m_pSaveData->Load_Data()->m_stPlayerData.m_nNonHitBulletCount += 1;
+			//UALERT(TEXT("%s"), *OtherActor->GetName().Left(8));
+			if (OtherActor->GetName().Left(8) == "BP_Spawn")
+			{
+				return;
+			}
 			Explosion();
 		}
 

@@ -24,6 +24,9 @@ private:
 	UPROPERTY()
 		class UCpt_OSIMng* m_pOSIMng;
 
+	UPROPERTY()
+		class APlayerController* m_pController;
+
 	bool m_bActive = false;
 
 	UPROPERTY(EditAnywhere, Category = Option)
@@ -33,19 +36,18 @@ private:
 public:
 	AHUD_Game();
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintCallable)
 		void Init();
-
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	virtual void Tick(float DeltaTime) override;
 
 	void SetHudActive(bool bActive);
 
 public:
 
 	UFUNCTION(BlueprintPure)
-		class UWidget_GHUD* GetRootHUD() { return m_pMainHUD; }
+		class UWidget_GHUD* GetRootHUD();// { return m_pMainHUD; }
 
 	void AddOSIEnemy(class AGameCharacter* pEnemy, int32 nIconState);
 	void DestroyOSIEnemy();

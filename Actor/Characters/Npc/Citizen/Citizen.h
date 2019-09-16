@@ -31,6 +31,12 @@ private:
 	UPROPERTY()
 		class AGBox* m_pPlayer;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Say Option", meta = (AllowPrivateAccess = "true"))
+		class UCpt_SayBubble* m_pHelpSay;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Say Option", meta = (AllowPrivateAccess = "true"))
+		class UCpt_SayBubble* m_pThankSay;
+
 	bool m_bActive = false;
 	bool m_bHappyMotion = false;
 	bool m_bFreeMotionEnd = false;
@@ -76,5 +82,6 @@ public:
 
 public:
 	FORCEINLINE class UCpt_AnimationMng* GetAnimationMng() { return m_pAnimationMng; }
-
+	FORCEINLINE class UCpt_SayBubble* GetSayHelp() { return m_pHelpSay; }
+	FORCEINLINE class UCpt_SayBubble* GetSayThanks() { return m_pThankSay; }
 };

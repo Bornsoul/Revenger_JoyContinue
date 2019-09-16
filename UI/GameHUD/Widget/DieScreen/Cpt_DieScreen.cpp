@@ -6,7 +6,8 @@ UCpt_DieScreen::UCpt_DieScreen()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 
-	static ConstructorHelpers::FObjectFinder<UClass> Const_ResultHUD(TEXT("/Game/1_Project_Main/1_Blueprints/UI/GameHUD/Die/BP_Widget_Die.BP_Widget_Die_C"));
+	static ConstructorHelpers::FObjectFinder<UClass> Const_ResultHUD(TEXT("/Game/1_Project_Main/1_Blueprints/UI/GameHUD/Die/BP_Widget_Die.BP_Widget_Die_C")); 
+
 	if (Const_ResultHUD.Succeeded())
 	{
 		m_pInst_Widget = Const_ResultHUD.Object;
@@ -34,13 +35,27 @@ void UCpt_DieScreen::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
+	if (m_pInst_Widget != nullptr)
+	{
+		if (m_pInst_Widget->IsValidLowLevel())
+		{
+			m_pInst_Widget = nullptr;
+		}
+	}
+
 	if (m_pWidget != nullptr)
 	{
 		if (m_pWidget->IsValidLowLevel())
 		{
-			m_pWidget->RemoveFromParent();
-			m_pWidget->ConditionalBeginDestroy();
 			m_pWidget = nullptr;
+		}
+	}
+
+	if (m_pKeyStateMng != nullptr)
+	{
+		if (m_pKeyStateMng->IsValidLowLevel())
+		{
+			m_pKeyStateMng = nullptr;
 		}
 	}
 }
@@ -50,9 +65,10 @@ void UCpt_DieScreen::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	
 	if (m_bActive == false) return; 
+	if (m_pWidget == nullptr) return;
 
 	if (m_bDieStart)
-	{	
+	{			
 		if (UGameplayStatics::GetRealTimeSeconds(GetWorld()) - m_fDieStartTime_Cur >= m_fDieStartTime_End)
 		{
 			m_pWidget->SetActive(true);
@@ -69,7 +85,9 @@ void UCpt_DieScreen::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 		{
 			if (m_pKeyStateMng->GetKeyIsDown(EKeys::LeftMouseButton))
 			{
-				UGameplayStatics::OpenLevel(GetWorld(), TEXT("Loading_Game"), true);
+				UGameplayStatics::OpenLevel(GetWorld(), TEXT("Loading"), true);
+				m_bActive = false;
+				m_bKeyTime = false;
 				return;
 			}
 		}

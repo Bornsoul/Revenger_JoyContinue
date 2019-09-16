@@ -66,6 +66,7 @@ void UWidget_PauseMenu::Menu_Button(E_Button_Pause eState)
 	{
 	case E_Button_Pause::E_RESUME:
 		SetButtonState(static_cast<int32>(E_Button_Pause::E_RESUME));
+		UGameplayStatics::SetGamePaused(GetWorld(), false);
 		break;
 	case E_Button_Pause::E_RESTART:
 		SetButtonState(static_cast<int32>(E_Button_Pause::E_RESTART));

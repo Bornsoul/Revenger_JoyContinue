@@ -13,10 +13,10 @@ class REVENGER_API AGameCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
-
+		
 public:
 	// Sets default values for this character's properties
-	
+
 
 protected:
 	bool m_bLife = false;
@@ -24,7 +24,8 @@ protected:
 	bool m_bIgnoreCollision_Pawn = false;
 	bool m_bRagdoll = false;
 
-public :
+
+public:
 	UFUNCTION(BlueprintPure)
 		bool GetLife() { return m_bLife; }
 

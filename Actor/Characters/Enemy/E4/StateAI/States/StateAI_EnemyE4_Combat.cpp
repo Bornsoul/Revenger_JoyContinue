@@ -26,7 +26,7 @@ void UStateAI_EnemyE4_Combat::Enter()
 
 	float fRand = FMath::RandRange(0.0f, 100.0f);
 
-	if (fRand < 75)
+	if (fRand < 90.0f)
 	{
 		AActor* pTarget = GetRootAI()->DetectInPerception();
 
@@ -36,7 +36,7 @@ void UStateAI_EnemyE4_Combat::Enter()
 			FVector vTargetPos = pTarget->GetActorLocation();
 
 			float fDistance = FVector::Distance(vEnemyPos, vTargetPos);
-			if (fDistance <= 400.0f)
+			if (fDistance <= 1500.0f)
 			{
 				ChangeCombatState(static_cast<int32>(E_StateAI_EnemyE4_Combat::E_Combat_DistMove));
 			}

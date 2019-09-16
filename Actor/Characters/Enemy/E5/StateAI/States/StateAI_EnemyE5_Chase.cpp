@@ -17,7 +17,7 @@ void UStateAI_EnemyE5_Chase::Enter()
 	m_fDist_Combat = GetRootAI()->m_fAISightRadius;
 	m_fDist_Lost = GetRootAI()->m_fAILoseSightRadius;
 
-	ULOG(TEXT("E5 Chase"));
+	//ULOG(TEXT("E5 Chase"));
 }
 
 void UStateAI_EnemyE5_Chase::Exit()

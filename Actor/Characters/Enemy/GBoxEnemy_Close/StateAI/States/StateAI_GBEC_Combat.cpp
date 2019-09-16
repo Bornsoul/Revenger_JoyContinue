@@ -22,7 +22,7 @@ void UStateAI_GBEC_Combat::Enter()
 
 	float fRand = FMath::RandRange(0.0f, 100.0f);
 
-	if (fRand < 80)
+	if (fRand < 85.0f)
 	{
 		AActor* pTarget = GetRootAI()->DetectInPerception();
 		if (pTarget == nullptr)
@@ -34,11 +34,10 @@ void UStateAI_GBEC_Combat::Enter()
 		FVector vTargetPos = pTarget->GetActorLocation();
 
 		float fDistance = FVector::Distance(vEnemyPos, vTargetPos);
-		//ULOG(TEXT("%f"), fDistance);
-		if (fDistance <= 1000.0f)
+		if (fDistance <= 1800.0f)
 		{
 			fRand = FMath::RandRange(0.0f, 100.0f);
-			if (fRand < 70)
+			if (fRand < 80)
 			{
 				ChangeCombatState(static_cast<int32>(E_StateAI_GBEC_Combat::E_Combat_Attack));
 			}
@@ -55,8 +54,9 @@ void UStateAI_GBEC_Combat::Enter()
 		
 	}
 	else
+	{
 		ChangeCombatState(static_cast<int32>(E_StateAI_GBEC_Combat::E_Combat_DistMove));
-
+	}
 }
 
 void UStateAI_GBEC_Combat::Exit()

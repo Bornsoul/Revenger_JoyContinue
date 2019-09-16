@@ -2,6 +2,8 @@
 
 #include "HUD_Game.h"
 #include "Widget_GHUD.h"
+#include "Components/VerticalBox.h"
+#include "UI/GameHUD/Widget/OffScreenIndicator/Cpt_OSIMng.h"
 
 AHUD_Game::AHUD_Game()
 {
@@ -16,23 +18,24 @@ AHUD_Game::AHUD_Game()
 
 void AHUD_Game::Init()
 {
-	if (m_pInst_MainHUD != nullptr)
+	m_pController = Cast<APlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	if (m_pController == nullptr)
 	{
-		m_pMainHUD = CreateWidget<UWidget_GHUD>(UGameplayStatics::GetPlayerController(GetWorld(), 0), m_pInst_MainHUD);
-		if (m_pMainHUD != nullptr)
-		{
-			m_pMainHUD->AddToViewport();
+		ULOG(TEXT("Controller is nullptr"));
+		return;
+	}
+
+	m_pMainHUD = CreateWidget<UWidget_GHUD>(m_pController, m_pInst_MainHUD);
+	if (m_pMainHUD != nullptr)
+	{
+		m_pMainHUD->AddToViewport();
 			
-			m_pMainHUD->GetSlowGageHUD()->SetSlowEnter(m_fGageSpeed);
-			m_pMainHUD->GetSkillHUD()->SetSkillEnter();
-			m_bActive = true;
-			SetHudActive(false);
-		}
+		m_pMainHUD->GetSlowGageHUD()->SetSlowEnter(m_fGageSpeed);
+		m_pMainHUD->GetSkillHUD()->SetSkillEnter();
+		m_bActive = true;
+		SetHudActive(false);
 	}
-	else
-	{
-		ULOG(TEXT("UI Fail"));
-	}
+
 }
 
 void AHUD_Game::SetHudActive(bool bActive)
@@ -61,9 +64,22 @@ void AHUD_Game::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	
 	if (m_pMainHUD != nullptr)
 	{
-		m_pMainHUD->RemoveFromViewport();
-		m_pMainHUD = nullptr;
+		if (m_pMainHUD->IsValidLowLevel())
+		{
+			m_pMainHUD->RemoveFromViewport();
+			m_pMainHUD = nullptr;
+		}
 	}
+
+	if (m_pOSIMng != nullptr)
+	{
+		if (m_pOSIMng->IsValidLowLevel())
+		{
+			m_pOSIMng->DestroyComponent();
+			m_pOSIMng = nullptr;
+		}
+	}
+		
 }
 
 void AHUD_Game::Tick(float DeltaTime)
@@ -81,6 +97,29 @@ void AHUD_Game::Tick(float DeltaTime)
 		m_pMainHUD->GetSkillHUD()->Tick_SkillCoolTimeCount(DeltaTime);
 		m_pMainHUD->GetSkillHUD()->Tick_SkillShieldTime(DeltaTime);
 	}
+}
+
+class UWidget_GHUD* AHUD_Game::GetRootHUD()
+{
+	if (m_pController == nullptr)
+	{
+		m_pController = Cast<APlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+		m_pMainHUD = CreateWidget<UWidget_GHUD>(m_pController, m_pInst_MainHUD);
+		if (m_pMainHUD != nullptr)
+		{
+			m_pMainHUD->AddToViewport();
+
+			m_pMainHUD->GetSlowGageHUD()->SetSlowEnter(m_fGageSpeed);
+			m_pMainHUD->GetSkillHUD()->SetSkillEnter();
+			m_bActive = true;
+			SetHudActive(false);
+		}
+
+		GetRootHUD();
+		return nullptr;
+	}
+
+	return m_pMainHUD;
 }
 
 void  AHUD_Game::AddOSIEnemy(class AGameCharacter* pEnemy, int32 nIconState)

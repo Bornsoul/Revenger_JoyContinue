@@ -5,6 +5,10 @@
 #include "Shield.h"
 #include "FootSmoke.h"
 #include "Actor/Characters/Player/Stick/Stick.h"
+#include "Actor/Props/FootPush/Cpt_FootPushLine.h"
+#include "Actor/SaveData/Cpt_GameSave.h"
+#include "Actor/SaveData/GameSaveMng.h"
+#include "Actor/SaveData/Act_SpawnPoint.h"
 
 #include "State/StateMng_GBox.h"
 #include "UI/GameHUD/HUD_GameMain.h"
@@ -36,7 +40,6 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Components/PostProcessComponent.h"
 #include "Components/ArrowComponent.h"
-#include "Actor/Props/FootPush/Cpt_FootPushLine.h"
 
 AGBox::AGBox()
 {
@@ -96,8 +99,6 @@ AGBox::AGBox()
 	m_pAnimationMng->SetAnimList(TEXT("/Game/1_Project_Main/1_Blueprints/Actor/Characters/Player/BP_AnimList_GBox.BP_AnimList_GBox_C"));
 
 	m_pKeyStateMng = CreateDefaultSubobject<UCpt_KeyStateMng>(TEXT("KeyStateMng"));
-//	m_pMouseMng = CreateDefaultSubobject<UCpt_MouseMng>(TEXT("MouseMng"));
-
 	m_pSlowMotion = CreateDefaultSubobject<UCpt_SlowMotion>(TEXT("SlowMotion"));
 
 	m_pSoundMng = CreateDefaultSubobject<UCpt_SoundMng>(TEXT("SoundMng"));
@@ -119,6 +120,8 @@ AGBox::AGBox()
 	m_pDieWidget = CreateDefaultSubobject<UCpt_DieScreen>(TEXT("DieScreen"));
 	m_pSimpleMenu = CreateDefaultSubobject<UCpt_SimpleMenu>(TEXT("SimpleMenu"));
 	m_pPauseMenu = CreateDefaultSubobject<UCpt_PauseMenu>(TEXT("PauseMenu"));
+
+	m_pSaveMng = CreateDefaultSubobject<UCpt_GameSave>(TEXT("SaveGameMng"));
 
 	static ConstructorHelpers::FClassFinder<UAnimInstance> Const_AnimInst(TEXT("/Game/1_Project_Main/2_Contents/Actors/Player/Joy/Animation/BP_Anim_Joy.BP_Anim_Joy_C"));
 	if (Const_AnimInst.Succeeded()) GetMesh()->SetAnimInstanceClass(Const_AnimInst.Class);
@@ -143,8 +146,10 @@ void AGBox::PossessedBy(AController* NewController)
 void AGBox::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-	SetActorHiddenInGame(true);
+	
+	
 
+	SetActorHiddenInGame(true);
 }
 
 void AGBox::BeginPlay()
@@ -152,18 +157,46 @@ void AGBox::BeginPlay()
 	Super::BeginPlay();
 	GetController()->SetControlRotation(FRotator::ZeroRotator);
 	
-	TArray<FString> sTest;
-	sTest.Add("5");
-	sTest.Add("3");
-	sTest.Add("6");
-	m_pResultWidget->SetDataInit(sTest);
-	sTest.Empty();
-	
 	m_pHud = Cast<AHUD_Game>(UGameplayStatics::GetPlayerController(this, 0)->GetHUD());
 	if (m_pHud != nullptr)
 	{
 		m_pHud->Init();
-		//m_pHud->GetRootHUD()->Active_TopTitle(true);		
+	}
+
+	//! 데이터 저장 체크
+	if (m_pSaveMng->Check_DataValid() == false)
+	{
+		UALERT(TEXT("Error - SaveData is Empty (Player)"));		
+		return;
+	}
+
+	m_nSpawnPoint = m_pSaveMng->Load_Data()->m_nSpawnPoint;
+	m_nDeadCount = m_pSaveMng->Load_Data()->m_stPlayerData.m_nDeadCount;
+	m_nDifficultLevel = m_pSaveMng->Load_Data()->m_nDifficulty;
+	ULOG(TEXT("SpawnPoint : %d"), m_nSpawnPoint);
+	ULOG(TEXT("BulletHit_Count : %d"), m_pSaveMng->Load_Data()->m_stPlayerData.m_nHitBulletCount);
+	ULOG(TEXT("BulletNonHit_Count : %d"), m_pSaveMng->Load_Data()->m_stPlayerData.m_nNonHitBulletCount);
+	ULOG(TEXT("DeadCount : %d"), m_nDeadCount);
+	ULOG(TEXT("Difficult Level : %d"), m_nDifficultLevel);
+	ULOG(TEXT("Tutorial State : %d"), m_pSaveMng->Load_Data()->m_nTutorial);	
+
+	//! 데이터가 존재상태일때
+	//! 세이브존을 한번이라도 지나쳤을때
+	//! 모든 스폰지점을 확인후 세이브한곳과 같은곳을 찾아서 해당위치로 스폰시킴
+	if (m_nSpawnPoint >= 0)
+	{
+		for (TActorIterator<AAct_SpawnPoint> ActorItr(GetWorld()); ActorItr; ++ActorItr)
+		{
+			AAct_SpawnPoint* pObj = *ActorItr;
+			if (pObj != nullptr)
+			{
+				if (m_nSpawnPoint == pObj->GetCurrentPoint())
+				{
+					SetActorLocation(pObj->GetSpawnArrow()->GetComponentLocation());
+					break;
+				}
+			}
+		}
 	}
 
 	m_pAnimInstance = Cast<UAnimInst_GBox>(GetMesh()->GetAnimInstance());
@@ -174,19 +207,23 @@ void AGBox::BeginPlay()
 	m_pMaterialEffect->AddEffect(E_MaterialEffect::E_Disint);
 
 	m_pPostProcessEffect->Init(m_pPostProcess);
-
+	m_pPauseMenu->SetRoot(this);
 
 	m_pStateMng = NewObject<UStateMng_GBox>();
 	if (m_pStateMng != nullptr)
 	{
 		m_pStateMng->Init(this);
-		m_pStateMng->ChangeState(static_cast<int32>(E_State_GBox::E_Landing)); //E_State_GBox::E_SimpleMenu));
+		m_pStateMng->ChangeState(static_cast<int32>(E_State_GBox::E_Landing));
 	}
 
-	m_bLife = true;
+
 	SetMovement(true);
-	SetVisibleHUD(false);
-	
+	SetVisibleHUD(false); 
+	SetAttackControl(true);
+	SetSlowControl(true);
+	SetDashControl(true);
+
+	m_bLife = true;		
 	m_pShield = CreateShield();	
 	m_fShieldTime_End = m_fShield_ReCharge_Time;
 }
@@ -197,8 +234,109 @@ void AGBox::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 	if (m_pStateMng != nullptr)
 	{
-		m_pStateMng->Destroy();
-		m_pStateMng = nullptr;
+		if (m_pStateMng->IsValidLowLevel())
+		{
+			m_pStateMng->Destroy();
+			m_pStateMng = nullptr;
+		}
+	}
+
+	if (m_pShield != nullptr)
+	{
+		if (m_pShield->IsValidLowLevel())
+		{
+			m_pShield->Destroy();
+			m_pShield = nullptr;
+		}
+	}
+
+	if (m_pMouseLandMng != nullptr)
+	{
+		if (m_pMouseLandMng->IsValidLowLevel())
+		{
+			m_pMouseLandMng->DestroyComponent();
+			m_pMouseLandMng = nullptr;
+		}
+	}
+
+	if (m_pDieWidget != nullptr)
+	{
+		if (m_pDieWidget->IsValidLowLevel())
+		{
+			m_pDieWidget->DestroyComponent();
+			m_pDieWidget = nullptr;
+		}
+	}
+
+	if (m_pFootPushLine != nullptr)
+	{
+		if (m_pFootPushLine->IsValidLowLevel())
+		{
+			m_pFootPushLine->DestroyComponent();
+			m_pFootPushLine = nullptr;
+		}
+	}
+
+	if (m_pHud != nullptr)
+	{
+		if (m_pHud->IsValidLowLevel())
+		{
+			m_pHud->Destroy();
+			m_pHud = nullptr;
+		}
+	}
+
+	if (m_pAnimInstance != nullptr)
+	{
+		if (m_pAnimInstance->IsValidLowLevel())
+		{
+			m_pAnimInstance = nullptr;
+		}
+	}
+
+	if (m_pGhostTrail != nullptr)
+	{
+		if (m_pGhostTrail->IsValidLowLevel())
+		{
+			m_pGhostTrail->DestroyComponent();
+			m_pGhostTrail = nullptr;
+		}
+	}
+
+	if (m_pPauseMenu != nullptr)
+	{
+		if (m_pPauseMenu->IsValidLowLevel())
+		{
+			m_pPauseMenu->DestroyComponent();			
+			m_pPauseMenu = nullptr;
+		}
+	}
+
+	if (m_pResultWidget != nullptr)
+	{
+		if (m_pResultWidget->IsValidLowLevel())
+		{
+			m_pResultWidget->DestroyComponent();
+			m_pResultWidget = nullptr;
+		}
+	}
+
+	if (m_pSaveMng != nullptr)
+	{
+		if (m_pSaveMng->IsValidLowLevel())
+		{
+			//m_pSaveMng->DestroyComponent();
+			m_pSaveMng = nullptr;
+		}
+	}
+
+	if (m_pSoundMng != nullptr)
+	{
+		if (m_pSoundMng->IsValidLowLevel())
+		{
+			m_pSoundMng->DestroyComponent();
+			m_pSoundMng = nullptr;
+		}
 	}
 }
 
@@ -216,31 +354,26 @@ void AGBox::Tick(float DeltaTime)
 
 	if (GetMovement() == false)
 	{
+		AnimInst_Tick(DeltaTime);
+
 		return;
 	}
 	
-	if (m_pStateMng != nullptr) m_pStateMng->Update(DeltaTime);
+	if (m_pStateMng != nullptr)
+	{
+		m_pStateMng->Update(DeltaTime);
+	}
 
 	AnimInst_Tick(DeltaTime);
-	Shield_Tick(DeltaTime);
-	
-	// Debug
-	//if (GetKeyStateMng()->GetKeyIsJustRelease(EKeys::O) == true)
-	//{
-	//	if (m_pResultWidget->Get_Active() == false)
-	//	{
-	//		m_pResultWidget->Active_HUD();
-	//	}
-	//	else
-	//	{
-	//		m_pResultWidget->DeActive_HUD();
-	//	}
-	//}
+	Shield_Tick(DeltaTime);	
 }
 
 void AGBox::AnimInst_Tick(float fDeltaTime)
 {
-	if (m_pAnimInstance == nullptr) return;
+	if (m_pAnimInstance == nullptr)
+	{
+		return;
+	}
 	
 	m_pAnimInstance->SetStat_Falling(GetCharacterMovement()->IsFalling());
 
@@ -294,7 +427,7 @@ void AGBox::SlowGage_Tick(float fDeltaTime)
 		m_pStateMng->GetCurrentState() == static_cast<int32>(E_State_GBox::E_PortalJump) &&
 		m_pStateMng->GetCurrentState() == static_cast<int32>(E_State_GBox::E_PortalFalling)) return;
 
-	if (GetVisibleHUD() == false || m_bState_Pause == true)
+	if (GetVisibleHUD() == false || m_bState_Pause == true || m_bSlowControl == false)
 	{
 		float fA = m_pHud->GetRootHUD()->GetSlowGageHUD()->GetDeActiveGageValue() / 100.0f * 1.0f;
 		m_pHud->GetRootHUD()->GetSkillHUD()->Active_CoolTime(2, FMath::Abs(1.0f - fA));
@@ -317,6 +450,8 @@ void AGBox::SlowGage_Tick(float fDeltaTime)
 		m_pGhostTrail->DeActive_TickGhostTrailEffect(TEXT("SlowMotion"));
 		return;
 	}
+
+	if (m_bSlowControl == false) return;
 
 	if (GetKeyStateMng()->GetKeyIsJustPress(EKeys::LeftShift) == true)
 	{
@@ -343,10 +478,13 @@ void AGBox::SlowGage_Tick(float fDeltaTime)
 	}
 }
 
-
 void AGBox::DestroyShield()
 {
-	if(m_pShield!=nullptr) m_pShield->Destroy();
+	if (m_pShield != nullptr)
+	{
+		m_pShield->Destroy();
+	}
+	Delay_GodModOn();
 }
 
 void AGBox::PauseMenu_Tick()
@@ -357,25 +495,28 @@ void AGBox::PauseMenu_Tick()
 		m_pStateMng->GetCurrentState() == static_cast<int32>(E_State_GBox::E_PortalJump)&&
 		m_pStateMng->GetCurrentState() == static_cast<int32>(E_State_GBox::E_PortalFalling)) return;
 	
-	if (m_bState_Dialoging == true) return;
+	if (m_bState_Dialoging == true)
+	{
+		return;
+	}
 
 	if (m_pPauseMenu->GetActive() == false && m_pPauseMenu->GetAniPlaying() == false)
 	{
-
 		if (GetKeyStateMng()->GetKeyIsJustPress(EKeys::Escape) == true ||
 			GetKeyStateMng()->GetKeyIsJustPress(EKeys::Tab) == true && m_pPauseMenu->GetAniPlaying() == false)
 		{
-
-			SetVisibleHUD(false);
-			SetMovement(false);
-			GetMouseMng()->SetMouseCamMove(false);
+			if (UGameplayStatics::GetCurrentLevelName(GetWorld()) == "Stage_3")
+			{
+				SetVisibleHUD(false);
+				SetMovement(false);
+				GetMouseMng()->SetMouseCamMove(false);
+			}
 			m_bState_Pause = true;
 			m_pPauseMenu->Active_PauseMenu();
 		}
 	}
 	else
 	{
-		GetSlowMotion()->Active_SlowMotion(1000000.0f, 0.01f, 13.0f);
 
 		if (GetKeyStateMng()->GetKeyIsJustPress(EKeys::Escape) == true ||
 			GetKeyStateMng()->GetKeyIsJustPress(EKeys::Tab) == true && m_pPauseMenu->GetAniPlaying() == false)
@@ -387,11 +528,14 @@ void AGBox::PauseMenu_Tick()
 		if (m_pPauseMenu->Menu_GetButton() == 1)
 		{
 			m_pPauseMenu->DeActive_PauseMenu();
-			SetVisibleHUD(true);
-			SetMovement(true);
+			if (UGameplayStatics::GetCurrentLevelName(GetWorld()) == "Stage_3")
+			{
+				SetVisibleHUD(true);
+				SetMovement(true);
+				GetMouseMng()->SetMouseCamMove(true);
+			}
 			m_bState_Pause = false;
-			GetMouseMng()->SetMouseCamMove(true);
-			GetSlowMotion()->DeActive_SlowMotion();
+			//GetSlowMotion()->DeActive_SlowMotion();
 			return;
 		}
 	}
@@ -402,6 +546,7 @@ float AGBox::GetNormalizeDir(float fAngle, float fRangeMin, float fRangeMax)
 {
 	//! 캐릭터가 바라보는 방향 360도를 -180 ~ 180 변환
 	float fResult = UKismetMathLibrary::NormalizeAxis(fAngle);
+	
 	if (fResult <= fRangeMin)
 	{
 		fResult = fRangeMin;
@@ -416,16 +561,23 @@ float AGBox::GetNormalizeDir(float fAngle, float fRangeMin, float fRangeMax)
 
 void AGBox::Shield_Tick(float fDeltaTime)
 {
-	if (m_pStateMng->GetCurrentState() == static_cast<int32>(E_State_GBox::E_Die)) return;
+	if (m_pStateMng->GetCurrentState() == static_cast<int32>(E_State_GBox::E_Die))
+	{
+		return;
+	}
 
 	if (m_pShield != nullptr)
 	{
 		m_pShield->SetActorLocation(GetActorLocation());
 	}
 
-	if (m_bShield == true) return;
+	if (m_bShield == true)
+	{
+		return;
+	}
 
 	m_fShieldTime_Curr += fDeltaTime;
+
 	if (m_fShieldTime_Curr >= m_fShieldTime_End)
 	{
 		m_fShieldTime_Curr = 0.0f;
@@ -434,40 +586,51 @@ void AGBox::Shield_Tick(float fDeltaTime)
 		{
 			m_pShield->Shield_Spawn();
 		}
-		ULOG(TEXT("Shield is Online"));
 		m_bShield = true;
 	}
+	
+}
+
+void AGBox::SetPause(bool bPause)
+{
+	m_bState_Pause = bPause;
+}
+
+void AGBox::Delay_GodModOn()
+{
+	m_bDebug_GodMode = true;
+	GetWorldTimerManager().SetTimer(m_pTimeDelay, this, &AGBox::Delay_GodModOff, 1.0f, false);
+}
+
+void AGBox::Delay_GodModOff()
+{
+	m_bDebug_GodMode = false;
+	GetWorldTimerManager().ClearTimer(m_pTimeDelay);
 }
 
 float AGBox::TakeDamage(float DamageAmount, struct FDamageEvent const & DamageEvent, class AController * EventInstigator, AActor * DamageCauser)
 {
 	float fFinalDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-	if (m_bLife == false) return 0.0f;
+	
+	if (m_bLife == false)
+	{
+		return 0.0f;
+	}
 
 	m_bState_Hit = true;
 
 	GetMaterialEffect()->ActiveEffect(E_MaterialEffect::E_Hit2);
 	if (GetIsShield() == true)
 	{
-		//! 쉴드상태일때
-		GetCamShake()->PlayCameraShake("AttackHit");
-		GetPostProcessEffect()->Active_Effect("Hit");
-		//GetMaterialEffect()->ActiveEffect(E_MaterialEffect::E_Hit);
-		GetAnimationMng()->Active_Stiffen(0.3f, 0.001f);
-		m_pSoundMng->Play("ShieldHit");
-		m_pHud->GetRootHUD()->GetSkillHUD()->Active_ShieldCoolTime(m_fShieldTime_End);
+		SetShieldDestroy();
 
-		if (m_pShield != nullptr)
-		{
-			m_pShield->Shield_Destroy();
-		}
-		m_fShieldTime_Curr = 0.0f;
-		SetShield(false);
 		return 0.000001f;
 	}
 
 	if (m_bDebug_GodMode == true)
+	{
 		return 0.0f;
+	}
 
 	E_DamageEventClass eDamageEventClass = ULib_DamageEvent::GetDamageEventClass(DamageEvent.GetTypeID());
 	if (fFinalDamage > 0.0f)
@@ -488,15 +651,14 @@ float AGBox::TakeDamage(float DamageAmount, struct FDamageEvent const & DamageEv
 		}
 
 		Tags.Empty();
-		m_fCurrentHp -= fFinalDamage;
 		SetLife(false);
-		m_pShield->Shield_Destroy();
-		//SetMovement(false);
 		SetVisibleHUD(false);
+		m_fCurrentHp -= fFinalDamage;
+		m_pShield->Shield_Destroy();
 		m_pDieWidget->Active_Die(1.0f);
 		m_pStateMng->ChangeState(static_cast<int32>(E_State_GBox::E_Die));
-
 	}
+
 	return fFinalDamage;
 }
 
@@ -506,13 +668,16 @@ void AGBox::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponen
 
 	PlayerInputComponent->BindAxis("MoveForward", m_pKeyStateMng, &UCpt_KeyStateMng::KB_Forward);
 	PlayerInputComponent->BindAxis("MoveRight", m_pKeyStateMng, &UCpt_KeyStateMng::KB_Right);
-
 }
 
 void AGBox::CharacterMessage(FString sMessage)
 {
 	Super::CharacterMessage(sMessage);
-	if (m_pStateMng != nullptr) m_pStateMng->StateMessage(sMessage);
+	
+	if (m_pStateMng != nullptr)
+	{
+		m_pStateMng->StateMessage(sMessage);
+	}
 }
 
 void AGBox::Inter_Notify_Message_Implementation(FName sMessage)
@@ -534,33 +699,50 @@ void AGBox::ControlMovement(FVector2D vKeyInput)
 
 bool AGBox::Control_Attack(FVector vLoc)
 {
-	if (m_pStateMng->GetCurrentState() == static_cast<int32>(E_State_GBox::E_Die)) return false;
-	if (m_pHud->GetRootHUD()->GetSkillHUD()->GetCoolTimeState(0) == true) 
+	if (m_pStateMng->GetCurrentState() == static_cast<int32>(E_State_GBox::E_Die))
+	{
 		return false;
+	}
+
+	if (m_pHud->GetRootHUD()->GetSkillHUD()->GetCoolTimeState(0) == true)
+	{
+		return false;
+	}
+
+	if (m_bAttackControl == false) return false;
 
 	UState_GBox_Attack* pState = Cast<UState_GBox_Attack>(m_pStateMng->GetStateClassRef(static_cast<int32>(E_State_GBox::E_Attack)));
 	if (pState != nullptr)
 	{
 		m_pHud->GetRootHUD()->GetSkillHUD()->Active_CoolTime(0, 0.2f);
-
 		m_pStateMng->ChangeState(static_cast<int32>(E_State_GBox::E_Attack));
+
 		return true;
 	}
+
 	return false;
 }
 
 bool AGBox::Control_Dodge()
 {
-	if (m_pStateMng->GetCurrentState() == static_cast<int32>(E_State_GBox::E_Die)) return false;
-	if (m_pHud->GetRootHUD()->GetSkillHUD()->GetCoolTimeCountEmpty(1) == true)
+	if (m_pStateMng->GetCurrentState() == static_cast<int32>(E_State_GBox::E_Die))
+	{
 		return false;
+	}
+
+	if (m_pHud->GetRootHUD()->GetSkillHUD()->GetCoolTimeCountEmpty(1) == true)
+	{
+		return false;
+	}
+
+	if (m_bDashControl == false) return false;
 
 	UState_GBox_Dodge* pState = Cast<UState_GBox_Dodge>(m_pStateMng->GetStateClassRef(static_cast<int32>(E_State_GBox::E_Dodge)));
 	if (pState != nullptr)
 	{
 		m_pHud->GetRootHUD()->GetSkillHUD()->Active_CoolTimeCount(1);
-
 		m_pStateMng->ChangeState(static_cast<int32>(E_State_GBox::E_Dodge));
+
 		return true;
 	}
 	return false;
@@ -568,22 +750,49 @@ bool AGBox::Control_Dodge()
 
 bool AGBox::Control_Portal(UArrowComponent* pStartPortal, UArrowComponent* pEndPortal)
 {
-	if (m_pStateMng == nullptr) return false;
-	if (m_pStateMng->GetCurrentState() == static_cast<int32>(E_State_GBox::E_Die)) return false;
-	if (m_pStateMng->GetCurrentState() == static_cast<int32>(E_State_GBox::E_PortalJump)) return false;
+	if (m_pStateMng == nullptr)
+	{
+		return false;
+	}
+	
+	if (m_pStateMng->GetCurrentState() == static_cast<int32>(E_State_GBox::E_Die))
+	{
+		return false;
+	}
+
+	if (m_pStateMng->GetCurrentState() == static_cast<int32>(E_State_GBox::E_PortalJump))
+	{
+		return false;
+	}
 
 	UState_GBox_PortalJump* pState = Cast<UState_GBox_PortalJump>(m_pStateMng->GetStateClassRef(static_cast<int32>(E_State_GBox::E_PortalJump)));
 	if (pState != nullptr)
 	{
-		//m_pSlowGage->SetDestroy();
-		m_pStick->Control_Portal(true);
-		SetVisibleHUD(false);
+		SetVisibleHUD(false); 
+		m_pStick->Control_Portal(true);		
 		m_pStick->SetStickHidden(false);
 		pState->SetPortalActor(pStartPortal, pEndPortal);
 		m_pStateMng->ChangeState(static_cast<int32>(E_State_GBox::E_PortalJump));
+
 		return true;
 	}
+
 	return false;
+}
+
+void AGBox::SetAttackControl(bool bAttacking)
+{
+	m_bAttackControl = bAttacking;
+}
+
+void AGBox::SetDashControl(bool bDashing)
+{
+	m_bDashControl = bDashing;
+}
+
+void AGBox::SetSlowControl(bool bSlowing)
+{
+	m_bSlowControl = bSlowing;
 }
 
 void AGBox::SetMovement(bool bMovement)
@@ -599,13 +808,53 @@ void AGBox::SetMovement(bool bMovement)
 		DisableInput(PlayerController);
 		m_pStateMng->ChangeState(static_cast<int32>(E_State_GBox::E_Idle));
 	}
-
 	m_bMovement = bMovement;
 }
 
 void AGBox::SetVisibleHUD(bool bVisible)
 {
+	//ULOG(TEXT("HUD : %d"), bVisible);
 	m_bVisibleHUD = bVisible;
+}
+
+void AGBox::SetVisibleDepth(int32 nValue)
+{
+	GetMesh()->CustomDepthStencilValue = nValue;
+}
+
+void AGBox::SetVisibleStick(bool bVisible)
+{
+	if (m_pStick != nullptr)
+	{
+		m_pStick->SetActorHiddenInGame(!bVisible);
+	}
+}
+
+void AGBox::SetVisibleShield(bool bVisible)
+{
+	if (m_pShield != nullptr)
+	{
+		m_pShield->SetActorHiddenInGame(!bVisible);
+	}
+}
+
+void AGBox::SetShieldDestroy()
+{
+	GetCamShake()->PlayCameraShake("AttackHit");
+	GetPostProcessEffect()->Active_Effect("Hit");
+	GetAnimationMng()->Active_Stiffen(0.3f, 0.001f);
+
+	m_pSoundMng->Play("ShieldHit");
+	m_pHud->GetRootHUD()->GetSkillHUD()->Active_ShieldCoolTime(m_fShieldTime_End);
+
+	if (m_pShield != nullptr)
+	{
+		m_pShield->Shield_Destroy();
+	}
+
+	m_fShieldTime_Curr = 0.0f;
+
+	SetShield(false);
 }
 
 void AGBox::CreateSpawn_Stick()
@@ -617,31 +866,45 @@ void AGBox::CreateSpawn_Stick()
 	}
 
 	FVector vPos = GetActorLocation();
-
 	vPos.Z = 2000.0f;
 
 	AStick* pSrc = GetWorld()->SpawnActor<AStick>(m_pInstance_Stick, vPos, FRotator::ZeroRotator);
-	if (pSrc == nullptr) return;
+	if (pSrc == nullptr)
+	{
+		return;
+	}
 	m_pStick = pSrc;
-	pSrc->Spawn(this, GetActorLocation());
-
+	pSrc->Spawn(this, GetActorLocation());	
 }
-
 
 AFootSmoke* AGBox::CreateFootSmoke()
 {
-	if (m_pInst_FootSmoke == nullptr) return nullptr;
-	AFootSmoke* pFOotSmoke = GetWorld()->SpawnActor<AFootSmoke>(m_pInst_FootSmoke);
-	if (pFOotSmoke == nullptr) return nullptr;
-	return pFOotSmoke;
+	if (m_pInst_FootSmoke == nullptr)
+	{
+		return nullptr;
+	}
 
+	AFootSmoke* pFOotSmoke = GetWorld()->SpawnActor<AFootSmoke>(m_pInst_FootSmoke);
+	if (pFOotSmoke == nullptr)
+	{
+		return nullptr;
+	}
+
+	return pFOotSmoke;
 }
 
 class AShield* AGBox::CreateShield()
 {
-	if (m_pInst_Shield == nullptr) return nullptr;
+	if (m_pInst_Shield == nullptr)
+	{
+		return nullptr;
+	}
+
 	AShield* pSrc = GetWorld()->SpawnActor<AShield>(m_pInst_Shield);
-	if (pSrc == nullptr) return nullptr;
+	if (pSrc == nullptr)
+	{
+		return nullptr;
+	}
 	pSrc->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepWorldTransform, TEXT("Bip001"));
 	pSrc->Shield_Destroy();
 
@@ -650,14 +913,30 @@ class AShield* AGBox::CreateShield()
 
 void AGBox::SetStick_MouseRot(bool bRot)
 {
-	if (m_pStick == nullptr) return;
+	if (m_pStick == nullptr)
+	{
+		return;
+	}
 
 	m_pStick->SetMouseRotation(bRot);
 }
 
 void AGBox::ShowResult()
 {
-	if (m_pResultWidget == nullptr) return;
+	if (m_pResultWidget == nullptr)
+	{
+		return;
+	}
+
+	TArray<FString> sResultList;
+	sResultList.Add(FString::FromInt(m_pSaveMng->Load_Data()->m_stPlayerData.m_nHitBulletCount));
+	sResultList.Add(FString::FromInt(m_pSaveMng->Load_Data()->m_stPlayerData.m_nNonHitBulletCount));
+	sResultList.Add(FString::FromInt(m_pSaveMng->Load_Data()->m_stPlayerData.m_nDeadCount));
+
+	m_pResultWidget->SetDataInit(sResultList);
+
 	SetVisibleHUD(false);
 	m_pResultWidget->Active_HUD();
+
+	sResultList.Empty();
 }

@@ -30,10 +30,13 @@ private:
 	bool m_bActive = false;
 	bool m_bRevers = false;
 
+	int32 m_nCurCount = 1;
+
 public:
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	virtual void NativeDestruct() override;
 
 	UFUNCTION(BlueprintCallable)
 		void SetActive(bool bActive);
@@ -48,6 +51,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 		void Skip_Dialog();
+
+	void SetDialogTextSpeed(float fSpeed);
+	void SetDialogCount(int32 nCurCount, int32 nMaxCount);
 
 	FORCEINLINE bool GetActive() { return m_bActive; }
 	bool GetIsPlaying();

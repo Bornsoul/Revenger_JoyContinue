@@ -19,7 +19,15 @@ private:
 	UPROPERTY()
 		class UWidget_PauseMenu* m_pWidget;
 
+	UPROPERTY()
+		class UCpt_KeyStateMng* m_pKeyStateMng;
+
+	UPROPERTY()
+		class AGBox* m_pPlayer;
+
 	bool m_bActive = false;
+
+	float m_fKeyTime_Cur = 0.0f;
 
 public:
 	UCpt_PauseMenu();
@@ -30,6 +38,8 @@ public:
 
 	void Active_PauseMenu();
 	void DeActive_PauseMenu();
+
+	void SetRoot(class AGBox* pRoot) { m_pPlayer = pRoot; }
 
 	bool GetActive() { return m_bActive; }
 	bool GetAniPlaying();

@@ -13,7 +13,7 @@ void UStateAI_EnemyE5_Normal::Enter()
 {
 	Super::Enter();
 
-	ULOG(TEXT("E5 Normal"));
+	//ULOG(TEXT("E5 Normal"));
 }
 
 void UStateAI_EnemyE5_Normal::Exit()

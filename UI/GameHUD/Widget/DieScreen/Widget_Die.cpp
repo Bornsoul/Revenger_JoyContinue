@@ -20,7 +20,7 @@ void UWidget_Die::NativeConstruct()
 		return;
 	}
 
-	m_pDieTimeLabel = Cast<UTextBlock>(GetWidgetFromName("DieText"));
+	m_pDieTimeLabel = Cast<UTextBlock>(GetWidgetFromName(TEXT("DieText")));
 	if (m_pDieTimeLabel == nullptr)
 	{
 		ULOG(TEXT("Textblock is nullptr"));
@@ -41,7 +41,7 @@ void UWidget_Die::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		if (m_fDieTime_Val <= 0.01f)
 		{
 			m_fDieTime_Val = 0.0f;
-			SetDieText("0.00");
+			SetDieText(TEXT("0.00"));
 			DeActive_DieTime();
 			return;
 		}
@@ -53,6 +53,27 @@ void UWidget_Die::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 }
 
+void UWidget_Die::NativeDestruct()
+{
+	Super::NativeDestruct();
+
+	if (m_pWidgetAni != nullptr)
+	{
+		if (m_pWidgetAni->IsValidLowLevel())
+		{
+			m_pWidgetAni = nullptr;
+		}
+	}
+
+	if (m_pDieTimeLabel != nullptr)
+	{
+		if (m_pDieTimeLabel->IsValidLowLevel())
+		{
+			m_pDieTimeLabel = nullptr;
+		}
+	}
+}
+
 void UWidget_Die::SetPlayAnimation(FString sAniName, bool bRevers)
 {
 	if (m_pWidgetAni == nullptr) return;
@@ -62,19 +83,19 @@ void UWidget_Die::SetPlayAnimation(FString sAniName, bool bRevers)
 
 void UWidget_Die::Active_DieTime(float fDieTime)
 {
-	ULOG(TEXT("Active DieTime"));
+	//ULOG(TEXT("Active DieTime"));
 	m_fDieTime_Val = fDieTime;
 	m_bDieTime = true;
 }
 
 void UWidget_Die::DeActive_DieTime()
 {
-	ULOG(TEXT("Active DeActive"));
+	//ULOG(TEXT("Active DeActive"));
 
 	m_fDieTime_Val = 0.0f;
 	SetDieText("0.00");
 	m_bDieTime = false;
-	UGameplayStatics::OpenLevel(GetWorld(), TEXT("Loading_Game"), true);
+	UGameplayStatics::OpenLevel(GetWorld(), TEXT("Loading"), true);
 }
 
 void UWidget_Die::SetActive(bool bActive)

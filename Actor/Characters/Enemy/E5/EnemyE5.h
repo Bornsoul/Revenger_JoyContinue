@@ -36,8 +36,8 @@ private:
 	UPROPERTY()
 		class UCpt_FootPushLine* m_pFootPushLine;
 
-	UPROPERTY()
-		class UCpt_EnemyHp* m_pHp;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Property", meta = (AllowPrivateAccess = "true"))
+		class UCpt_EnemyHpComponent* m_pHpHud;
 
 	UPROPERTY()
 		class AAIC_EnemyE5* m_pAIController;
@@ -45,7 +45,7 @@ private:
 	UPROPERTY()
 		class UStateMng_EnemyE5* m_pStateMng;
 
-	UPROPERTY(EditAnywhere, Category = Instance, Meta = (AllowPrivateAccess = true))
+	UPROPERTY(VisibleAnywhere)
 		class TSubclassOf<class AEnemyE5_Missile> m_pInstance_Bullet;
 
 	bool m_bShoot = false;
@@ -67,15 +67,7 @@ private:
 	float m_fMovementDir = 0.0f;
 
 	UPROPERTY(EditAnywhere, Category = Option)
-		float m_fCurrentHp = 2.0f;
-
-	UPROPERTY(EditAnywhere, Category = HpBar)
-		FVector m_vHpPos = FVector(40.0f, 40.0f, 40.0f);
-
-	UPROPERTY(EditAnywhere, Category = HpBar)
-		FVector2D m_vHpSize = FVector2D(40.0f, 40.0f);
-
-	
+		float m_fCurrentHp = 2.0f;	
 
 public:
 	AEnemyE5();

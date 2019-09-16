@@ -34,8 +34,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Instance, Meta = (AllowPrivateAccess = true))
 		float m_fLaserTime = 1.5f;
 
+	//UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Instance, Meta = (AllowPrivateAccess = true))
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Instance, Meta = (AllowPrivateAccess = true))
-
+		class AEnemyE4_Missile* m_pBullet;
 
 	bool m_bActive = false;
 	float m_fTime = 0.0f;
@@ -45,15 +46,27 @@ public:
 	bool m_bShoot = false;
 	//bool m_bDestroyLaser = false;
 
+	bool m_bSuccessHit = false;
+
 public:	
 	ATurret();
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaTime) override;
 	AEnemyE4_Missile* CreateBullet(FVector vShootLoc, FVector vTargetLoc);
+
+	UFUNCTION(BlueprintCallable)
+		void SetSuccessHit(bool bHit) { m_bSuccessHit = bHit; }
+
+	UFUNCTION(BlueprintPure)
+		bool GetSuccessHit() { return m_bSuccessHit; }
 
 	UFUNCTION(BlueprintCallable)
 		void SetTurretActive(bool bActive);
 
 	UFUNCTION(BlueprintPure)
 		bool GetActiveState() { return m_bActive; }
+
+	UFUNCTION(BlueprintPure)
+		int32 GetState() { return nState; }
 };

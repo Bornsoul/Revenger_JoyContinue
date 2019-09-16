@@ -37,9 +37,28 @@ void UCpt_DialogWidget::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	if (m_pDialogHUD != nullptr)
 	{
-		m_pDialogHUD->RemoveFromParent();
-		m_pDialogHUD = nullptr;
+		if (m_pDialogHUD->IsValidLowLevel())
+		{
+			m_pDialogHUD = nullptr;
+		}
 	}
+
+	if (m_pKeyStateMng != nullptr)
+	{
+		if (m_pKeyStateMng->IsValidLowLevel())
+		{
+			m_pKeyStateMng = nullptr;
+		}
+	}
+
+	if (m_pInst_HudWidget != nullptr)
+	{
+		if (m_pInst_HudWidget->IsValidLowLevel())
+		{
+			m_pInst_HudWidget = nullptr;
+		}
+	}
+
 	m_pDialogList.Empty();
 }
 
@@ -69,9 +88,12 @@ bool UCpt_DialogWidget::Active_Dialog()
 	m_nDialogIndex = 0;
 	m_bDestory = false;
 	m_pDialogHUD->SetActive(true);
+	m_pDialogHUD->SetDialogTextSpeed(m_fDialogTextSpeed);
 	SetDialogData(m_nDialogIndex);
+
 	m_bActiveDialog = true;
-	ULOG(TEXT("Active Dialog")); 
+
+	//ULOG(TEXT("Active Dialog")); 
 	return true;
 }
 
@@ -98,7 +120,6 @@ bool UCpt_DialogWidget::Active_NextDialog()
 		return false;
 	}
 	SetDialogData(m_nDialogIndex);
-
 	return true;
 }
 
@@ -129,6 +150,8 @@ void UCpt_DialogWidget::SetDialogData(int32 nIndex)
 		m_pDialogHUD->SetMediaData(m_pDialogList[nIndex].m_pMediaMat, m_pDialogList[nIndex].m_pMediaSource);
 	}
 
+	m_pDialogHUD->SetDialogCount(nIndex, m_pDialogList.Num());
+
 	m_pDialogHUD->SetDialogData(
 		m_pDialogList[nIndex].m_bImageList_Random,
 		m_pDialogList[nIndex].m_pImgList,
@@ -136,5 +159,5 @@ void UCpt_DialogWidget::SetDialogData(int32 nIndex)
 		m_pDialogList[nIndex].m_sSubName,
 		m_pDialogList[nIndex].m_sText);
 
-	ULOG(TEXT("DialogData Send"));
+	//ULOG(TEXT("DialogData Send"));
 }

@@ -26,7 +26,7 @@ void UStateAI_EnemyE4_Combat_DistMove::Enter()
 		GetRootAI()->GetRootChar()->Controll_Attack(pDetectTarget);
 	}
 
-	ULOG(TEXT("E4 Combat_DistMove"));
+	//ULOG(TEXT("E4 Combat_DistMove"));
 }
 
 void UStateAI_EnemyE4_Combat_DistMove::Exit()

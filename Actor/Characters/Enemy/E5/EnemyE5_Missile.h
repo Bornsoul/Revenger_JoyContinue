@@ -21,7 +21,19 @@ public:
 	UPROPERTY()
 		class UCpt_ParticleMng* m_pParticleMng;
 
+	/*UPROPERTY()
+		class UCpt_GameSave* m_pSaveData;*/
+
 protected:
+	UPROPERTY()
+		AActor* m_pShooter;
+
+	UPROPERTY()
+		AActor * m_pDamageCauser;
+
+	UPROPERTY()
+		AActor* m_pTarget;
+
 	float m_fMoveSpeed = 2500.0f;
 	bool m_bShooted = false;
 
@@ -32,16 +44,7 @@ protected:
 	float m_fReflectWiatTime_Ago = 0.3f;
 
 	float m_fReflectDamage = 0.0f;
-
-	AActor* m_pShooter;
-
 	float m_fLifeTime = 0.0f;
-
-	UPROPERTY()
-		AActor * m_pDamageCauser;
-
-	UPROPERTY()
-		AActor* m_pTarget;
 
 	bool m_bChase = false;
 

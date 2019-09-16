@@ -27,6 +27,12 @@ private:
 	UPROPERTY()
 		class UWidget_TopTitleItem* m_pTopTitle;
 
+	/*UPROPERTY()
+		class UWidget_QuestAlarmHUD* m_pQuest_HUD;*/
+
+	UPROPERTY()
+		class UVerticalBox* m_pVertcal_Status;
+
 	bool m_bActive = false;
 	bool m_bRevers = false;
 
@@ -34,6 +40,7 @@ public:
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	virtual void NativeDestruct() override;
 
 	UFUNCTION(BlueprintCallable)
 		void SetActive(bool bActive);
@@ -48,8 +55,15 @@ public:
 		FORCEINLINE bool GetActive() { return m_bActive; }
 
 	UFUNCTION(BlueprintPure)
-		FORCEINLINE UWidget_SlowGageHUD* GetSlowGageHUD() { return m_pSlowGage_HUD; }
+		FORCEINLINE class UWidget_SlowGageHUD* GetSlowGageHUD() { return m_pSlowGage_HUD; }
 
 	UFUNCTION(BlueprintPure)
-		FORCEINLINE UWidget_SkillHUD* GetSkillHUD() { return m_pSkill_HUD; }
+		FORCEINLINE class UWidget_SkillHUD* GetSkillHUD() { return m_pSkill_HUD; }
+
+	/*UFUNCTION(BlueprintPure)
+		FORCEINLINE class UWidget_QuestAlarmHUD* GetQuestHUD() { return m_pQuest_HUD; }*/
+
+	UFUNCTION(BlueprintPure)
+		FORCEINLINE class UVerticalBox* GetVerticalStatus() { return m_pVertcal_Status; }
+
 };

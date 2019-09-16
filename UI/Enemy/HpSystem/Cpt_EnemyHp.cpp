@@ -18,7 +18,7 @@ void UCpt_EnemyHp::BeginPlay()
 {
 	Super::BeginPlay();
 
-	
+
 }
 
 void UCpt_EnemyHp::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -106,6 +106,12 @@ void UCpt_EnemyHp::Tick_Position()
 
 void UCpt_EnemyHp::SetHit()
 {
+	if (m_pHpArray.Num() <= 0)
+	{
+		UALERT(TEXT("Enemy Hp is Empty"));
+		return;
+	}
+
 	if (m_pHpArray[0]->GetIsHit() == true)
 	{
 		ULOG(TEXT("All Hit"));

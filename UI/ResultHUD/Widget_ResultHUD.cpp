@@ -42,32 +42,21 @@ void UWidget_ResultHUD::NativeDestruct()
 {
 	Super::NativeDestruct();
 
-	for (int32 i = 0; i < m_pItemList.Num(); i++)
+	m_pItemList.Empty();
+	m_pButtonItemList.Empty();
+	m_pButtonTitleList.Empty();
+	m_pItemTitleList.Empty();
+	
+	if (m_pGoodItem != nullptr)
 	{
-		if (m_pItemList[i] != nullptr)
+		if (m_pGoodItem->IsValidLowLevel())
 		{
-			if (m_pItemList[i]->IsValidLowLevel())
-			{
-				m_pItemList[i]->ConditionalBeginDestroy();
-				m_pItemList[i] = nullptr;
-			}
+			m_pGoodItem = nullptr;
 		}
 	}
-
-	for (int32 i = 0; i < m_pButtonItemList.Num(); i++)
-	{
-		if (m_pButtonItemList[i] != nullptr)
-		{
-			if (m_pButtonItemList[i]->IsValidLowLevel())
-			{
-				m_pButtonItemList[i]->ConditionalBeginDestroy();
-				m_pButtonItemList[i] = nullptr;
-			}
-		}
-	}
-
+	
 	GetWorld()->GetTimerManager().ClearTimer(m_pTimer_Item);
-	GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
+	//GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
 }
 
 void UWidget_ResultHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)

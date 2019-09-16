@@ -52,6 +52,9 @@ private:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Dialog Sub", meta = (AllowPrivateAccess = "true"))
 		class UWidget_DialogHUD* m_pDialogHUD;
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Dialog", meta = (AllowPrivateAccess = "true"))
+		float m_fDialogTextSpeed = 0.05f;
+
 	UPROPERTY()
 		class UCpt_KeyStateMng* m_pKeyStateMng;
 

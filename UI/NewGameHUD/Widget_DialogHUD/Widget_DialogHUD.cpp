@@ -54,6 +54,49 @@ void UWidget_DialogHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 
 }
 
+void UWidget_DialogHUD::NativeDestruct()
+{
+	Super::NativeDestruct();
+
+	if (m_pWidgetAni != nullptr)
+	{
+		if (m_pWidgetAni->IsValidLowLevel())
+		{
+			//m_pWidgetAni->ConditionalBeginDestroy();
+			m_pWidgetAni = nullptr;
+		}
+	}
+
+	if (m_pDialogItem != nullptr)
+	{
+		if (m_pDialogItem->IsValidLowLevel())
+		{
+			m_pDialogItem->RemoveFromParent();
+			//m_pDialogItem->ConditionalBeginDestroy();
+			m_pDialogItem = nullptr;
+		}
+	}
+
+	if (m_pImg_Media != nullptr)
+	{
+		if (m_pImg_Media->IsValidLowLevel())
+		{
+			//m_pImg_Media->RemoveFromParent();
+			//m_pImg_Media->ConditionalBeginDestroy();
+			m_pImg_Media = nullptr;
+		}
+	}
+
+	if (m_pMediaPlayer != nullptr)
+	{
+		if (m_pMediaPlayer->IsValidLowLevel())
+		{
+			//m_pMediaPlayer->ConditionalBeginDestroy();
+			m_pMediaPlayer = nullptr;
+		}
+	}
+}
+
 void UWidget_DialogHUD::SetActive(bool bActive)
 {
 	m_bActive = bActive;
@@ -72,7 +115,11 @@ void UWidget_DialogHUD::SetActive(bool bActive)
 
 void UWidget_DialogHUD::SetPlayAnimation(FString sAniName, bool bRevers)
 {
-	if (m_pWidgetAni == nullptr) return;
+	if (m_pWidgetAni == nullptr)
+	{
+		return;
+	}
+
 	m_bRevers = bRevers;
 	m_pWidgetAni->SetPlayAnimation(sAniName, m_bRevers == true ? EUMGSequencePlayMode::Reverse : EUMGSequencePlayMode::Forward);
 }
@@ -101,7 +148,7 @@ void UWidget_DialogHUD::SetMediaData(UMaterial* pMat, UMediaSource* pMediaSource
 	m_pImg_Media->SetBrushFromMaterial(pMat);
 	SetPlayAnimation("MediaStart");
 
-	ULOG(TEXT("Vedio : %s"), *pMediaSource->GetName());
+	//ULOG(TEXT("Vedio : %s"), *pMediaSource->GetName());
 	
 }
 
@@ -110,4 +157,18 @@ bool UWidget_DialogHUD::GetIsPlaying()
 	if (m_pDialogItem == nullptr) return false;
 		
 	return m_pDialogItem->GetDialogPlaying();
+}
+void UWidget_DialogHUD::SetDialogTextSpeed(float fSpeed)
+{
+	if (m_pDialogItem == nullptr) return;
+
+	m_pDialogItem->SetDialogTextSpeed(fSpeed);
+}
+
+void UWidget_DialogHUD::SetDialogCount(int32 nCurCount, int32 nMaxCount)
+{
+	if (m_pDialogItem == nullptr) return;
+
+	//UALERT(TEXT("%d / %d"), nCurCount, nMaxCount);
+	m_pDialogItem->SetCountText(nCurCount, nMaxCount);
 }

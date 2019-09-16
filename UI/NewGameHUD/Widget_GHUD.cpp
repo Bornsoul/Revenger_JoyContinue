@@ -5,6 +5,7 @@
 #include "Widget/Widget_BulletTime/Widget_SlowGageHUD.h"
 #include "Widget/Widget_SkillCoolTime/Widget_SkillHUD.h"
 #include "Widget/Widget_TopTitleItem.h"
+//#include "Widget/Widget_QuestAlarm/Widget_QuestAlarmHUD.h"
 
 #include "Kismet/KismetMathLibrary.h"
 
@@ -29,21 +30,21 @@ void UWidget_GHUD::NativeConstruct()
 		return;
 	}
 
-	m_pSlowGage_HUD = Cast<UWidget_SlowGageHUD>(GetWidgetFromName("SlowGage"));
+	m_pSlowGage_HUD = Cast<UWidget_SlowGageHUD>(GetWidgetFromName(TEXT("SlowGage")));
 	if (m_pSlowGage_HUD == nullptr)
 	{
 		ULOG(TEXT("SlowGage HUD is nullptr"));
 		return;
 	}
 
-	m_pSkill_HUD = Cast<UWidget_SkillHUD>(GetWidgetFromName("SkillHUD"));
+	m_pSkill_HUD = Cast<UWidget_SkillHUD>(GetWidgetFromName(TEXT("SkillHUD")));
 	if (m_pSkill_HUD == nullptr)
 	{
 		ULOG(TEXT("SkillHUD is nullptr"));
 		return;
 	}
 
-	m_pTopTitle = Cast<UWidget_TopTitleItem>(GetWidgetFromName("TopTitle"));
+	m_pTopTitle = Cast<UWidget_TopTitleItem>(GetWidgetFromName(TEXT("TopTitle")));
 	if (m_pTopTitle == nullptr)
 	{
 		ULOG(TEXT("topTile is nullptr"));
@@ -51,11 +52,85 @@ void UWidget_GHUD::NativeConstruct()
 	}
 	m_pTopTitle->SetActive(false);
 
+	/*m_pQuest_HUD = Cast<UWidget_QuestAlarmHUD>(GetWidgetFromName(TEXT("QuestAlarm")));
+	if (m_pQuest_HUD == nullptr)
+	{
+		ULOG(TEXT("QuestHUD is nullptr"));
+		return;
+	}*/
+
+	m_pVertcal_Status = Cast<UVerticalBox>(GetWidgetFromName(TEXT("VertStat")));
+	if (m_pVertcal_Status == nullptr)
+	{
+		ULOG(TEXT("Vertical is nullptr"));
+		return;
+	}
+
 }
 
 void UWidget_GHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
+
+}
+
+void UWidget_GHUD::NativeDestruct()
+{
+	Super::NativeDestruct();
+
+	if (m_pWidgetAni != nullptr)
+	{
+		if (m_pWidgetAni->IsValidLowLevel())
+		{
+			m_pWidgetAni->Destroy();
+			m_pWidgetAni = nullptr;
+		}
+	}
+
+	/*if (m_pQuest_HUD != nullptr)
+	{
+		if (m_pQuest_HUD->IsValidLowLevel())
+		{
+			m_pQuest_HUD->RemoveFromParent();
+			m_pQuest_HUD = nullptr;
+		}
+	}*/
+
+	if (m_pSkill_HUD != nullptr)
+	{
+		if (m_pSkill_HUD->IsValidLowLevel())
+		{
+			m_pSkill_HUD->RemoveFromParent();
+			m_pSkill_HUD = nullptr;
+		}
+	}
+
+	if (m_pSlowGage_HUD != nullptr)
+	{
+		if (m_pSlowGage_HUD->IsValidLowLevel())
+		{
+			m_pSlowGage_HUD->RemoveFromParent();
+			m_pSlowGage_HUD = nullptr;
+		}
+	}
+
+	if (m_pTopTitle != nullptr)
+	{
+		if (m_pTopTitle->IsValidLowLevel())
+		{
+			m_pTopTitle->RemoveFromParent();
+			m_pTopTitle = nullptr;
+		}
+	}
+
+	if (m_pVertcal_Status != nullptr)
+	{
+		if (m_pVertcal_Status->IsValidLowLevel())
+		{
+			m_pVertcal_Status->RemoveFromParent();
+			m_pVertcal_Status = nullptr;
+		}
+	}
 
 }
 

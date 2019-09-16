@@ -29,7 +29,7 @@ void UStateAI_EnemyE5_Combat_DistMove::Enter()
 	}
 	//GetRootAI()->GetRootChar()->Controll_Attack(pDetectTarget); 
 
-	ULOG(TEXT("E5 Combat_DistMove"));
+	//ULOG(TEXT("E5 Combat_DistMove"));
 }
 
 void UStateAI_EnemyE5_Combat_DistMove::Exit()

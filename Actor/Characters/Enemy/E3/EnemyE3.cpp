@@ -11,13 +11,14 @@
 #include "Libraries/Components/CamShake/Cpt_CamShake.h"
 #include "Actor/Props/FootPush/Cpt_FootPushLine.h"
 
-#include "UI/Enemy/HpSystem/Cpt_EnemyHp.h"
+#include "UI/Enemy/NHpSystem/Cpt_EnemyHpComponent.h"
 
 #include "AnimInst_EnemyE3.h"
 #include "State/StateMng_EnemyE3.h"
 
 #include "AIC_EnemyE3.h"
 #include "Libraries/Components/WarningSpace/Cpt_WarningSpace.h"
+#include "Instance/GameInst_JoyContinue.h"
 
 AEnemyE3::AEnemyE3()
 {
@@ -55,13 +56,12 @@ AEnemyE3::AEnemyE3()
 
 	m_pSoundMng = CreateDefaultSubobject<UCpt_SoundMng>(TEXT("SoundMng"));
 	m_pSoundMng->Set_SoundList(TEXT("/Game/1_Project_Main/1_Blueprints/Actor/Characters/Enemy/EnemyE3/BP_SoundList_E3.BP_SoundList_E3_C"));
-	//m_pHp = CreateDefaultSubobject<USC_WidgetEnemyHp>(TEXT("EnemyHP"));	
 
 	m_pFootPushLine = CreateDefaultSubobject<UCpt_FootPushLine>(TEXT("FootPushLine"));
 	m_pFootPushLine->SetSKMesh(this);
 	m_pFootPushLine->AddBone(TEXT("Bone_Body"));
 
-	m_pHp = CreateDefaultSubobject<UCpt_EnemyHp>(TEXT("EnemyHp"));
+	m_pHpHud = CreateDefaultSubobject<UCpt_EnemyHpComponent>(TEXT("EnemyHpCpt"));
 
 	m_pWarningSpace = CreateDefaultSubobject<UCpt_WarningSpace>(TEXT("WarningSpace"));
 }
@@ -86,11 +86,14 @@ void AEnemyE3::BeginPlay()
 	GetController()->SetControlRotation(FRotator::ZeroRotator);
 	SetStartLoc(GetActorLocation());
 
-	if (m_pHp != nullptr)
+	m_fCurrentHp = GetEnemyHp();
+	GetCharacterMovement()->MaxWalkSpeed = GetEnemySpeed();
+
+	if (m_pHpHud != nullptr)
 	{
-		m_pHp->AddHeart(this, static_cast<int32>(m_fCurrentHp));
-		m_pHp->SetHeartSize(m_vHpPos, m_vHpSize);
+		m_pHpHud->CreateHp(m_fCurrentHp);
 	}
+
 	m_pAnimInstance = Cast<UAnimInst_EnemyE3>(GetMesh()->GetAnimInstance());
 	if (m_pAnimInstance == nullptr)
 	{
@@ -135,9 +138,38 @@ void AEnemyE3::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 
 	if (m_pStateMng != nullptr)
-		m_pStateMng->Destroy();
+	{
+		if (m_pStateMng->IsValidLowLevel())
+		{
+			m_pStateMng->Destroy();
+			m_pStateMng = nullptr;
+		}
+	}
+		
+	if (m_pWarningSpace != nullptr)
+	{
+		if (m_pWarningSpace->IsValidLowLevel())
+		{
+			m_pWarningSpace = nullptr;
+		}
+	}
 
-	m_pStateMng = nullptr;
+	if (m_pFootPushLine != nullptr)
+	{
+		if (m_pFootPushLine->IsValidLowLevel())
+		{
+			m_pFootPushLine = nullptr;
+		}
+	}
+
+	if (m_pHpHud != nullptr)
+	{
+		if (m_pHpHud->IsValidLowLevel())
+		{
+			m_pHpHud = nullptr;
+		}
+	}
+
 }
 
 void AEnemyE3::Tick(float DeltaTime)
@@ -163,8 +195,8 @@ void AEnemyE3::Tick(float DeltaTime)
 			{
 				if (pTarget->ActorHasTag("PlayerDie"))
 				{
-					ULOG(TEXT("player is Die"));
-					m_pHp->SetDestroy();
+					//ULOG(TEXT("player is Die"));
+					m_pHpHud->DestroyComponent();
 					DestroyOsiEnemy();
 					m_bHpDestroy = true;
 					return;
@@ -174,8 +206,8 @@ void AEnemyE3::Tick(float DeltaTime)
 	}
 
 	/*if (GetLife() == false) return;
-	if (m_pHp != nullptr )
-		m_pHp->Tick_Transform(GetActorLocation(), DeltaTime);
+	if (m_pHpHud != nullptr )
+		m_pHpHud->Tick_Transform(GetActorLocation(), DeltaTime);
 
 	AActor* pPlayer = m_pAIController->DetectInPerception();
 	if (pPlayer != nullptr)
@@ -185,7 +217,7 @@ void AEnemyE3::Tick(float DeltaTime)
 		{
 			if (pTarget->GetLife() == false)
 			{
-				m_pHp->SetDestroy();
+				m_pHpHud->SetDestroy();
 				return;
 			}
 		}
@@ -211,17 +243,24 @@ float AEnemyE3::TakeDamage(float DamageAmount, struct FDamageEvent const & Damag
 
 			m_fCurrentHp -= fDamage;
 
-			if (m_pHp != nullptr)
-				m_pHp->SetHit();
+			if (m_pHpHud != nullptr)
+			{
+				m_pHpHud->Hit();
+			}
 
 			bool bIsDead = m_fCurrentHp <= 0 ? true : false;
 
 			if (bIsDead == true)
 			{
+				Tags.Empty();
+				Tags.Add("EnemyDie");
+
 				SetLife(false);
 
-				if (m_pHp != nullptr)
-					m_pHp->SetDestroy();
+				if (m_pHpHud != nullptr)
+				{
+					m_pHpHud->DestroyComponent();					
+				}
 	
 				UState_EnemyE3_Die* pState = Cast<UState_EnemyE3_Die>(m_pStateMng->GetStateClassRef(static_cast<int32>(E_State_EnemyE3::E_Die)));
 				if (pState != nullptr)

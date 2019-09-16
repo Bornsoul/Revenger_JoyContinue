@@ -40,7 +40,7 @@ void AStick::Spawn(AActor* pTarget, FVector vPos)
 	m_pTarget = pTarget;
 	m_vStartLocation = m_pTarget->GetActorLocation();
 	m_rStartRotation = m_pTarget->GetActorRotation();
-	ULOG(TEXT("Stick is Spawned"));
+	//ULOG(TEXT("Stick is Spawned"));
 }
 
 void AStick::PossessedBy(AController * NewController)

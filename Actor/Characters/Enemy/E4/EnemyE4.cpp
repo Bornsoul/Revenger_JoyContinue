@@ -3,6 +3,7 @@
 #include "EnemyE4.h"
 #include "Libraries/Components/AnimationMng/Cpt_AnimationMng.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Actor/Characters/Player/GBox/GBox.h"
 
 #include "Libraries/Components/MaterialEffect/Cpt_MaterialEffect.h"
 #include "Libraries/Components/ParticleMng/Cpt_ParticleMng.h"
@@ -10,7 +11,7 @@
 #include "Libraries/Components/CamShake/Cpt_CamShake.h"
 #include "Actor/Props/FootPush/Cpt_FootPushLine.h"
 
-#include "UI/Enemy/HpSystem/Cpt_EnemyHp.h"
+#include "UI/Enemy/NHpSystem/Cpt_EnemyHpComponent.h"
 
 #include "AnimInst_EnemyE4.h"
 #include "State/StateMng_EnemyE4.h"
@@ -61,7 +62,7 @@ AEnemyE4::AEnemyE4()
 	m_pFootPushLine->SetSKMesh(this);
 	m_pFootPushLine->AddBone(TEXT("Bone_Body"));
 
-	m_pHp = CreateDefaultSubobject<UCpt_EnemyHp>(TEXT("EnemyHp"));
+	m_pHpHud = CreateDefaultSubobject<UCpt_EnemyHpComponent>(TEXT("EnemyHpCpt"));
 
 	static ConstructorHelpers::FClassFinder<AEnemyE4_Missile> Const_Bullet(TEXT("/Game/1_Project_Main/1_Blueprints/Actor/Characters/Enemy/EnemyE4/BP_EnemyE4_Missile.BP_EnemyE4_Missile_C"));
 	if (Const_Bullet.Succeeded()) m_pInstance_Bullet = Const_Bullet.Class;
@@ -91,13 +92,12 @@ void AEnemyE4::BeginPlay()
 
 	GetController()->SetControlRotation(FRotator::ZeroRotator);
 	SetStartLoc(GetActorLocation());
+	
+	m_fCurrentHp = GetEnemyHp();
 
-
-	if (m_pHp != nullptr)
+	if (m_pHpHud != nullptr)
 	{
-		m_pHp->AddHeart(this, static_cast<int32>(m_fCurrentHp));
-		m_pHp->SetHeartSize(m_vHpPos, m_vHpSize);
-		ULOG(TEXT("HpBar is Online"));
+		m_pHpHud->CreateHp(m_fCurrentHp);
 	}
 
 	m_pAnimInstance = Cast<UAnimInst_EnemyE4>(GetMesh()->GetAnimInstance());
@@ -176,8 +176,8 @@ void AEnemyE4::Tick(float DeltaTime)
 			{
 				if (pTarget->ActorHasTag("PlayerDie"))
 				{
-					ULOG(TEXT("player is Die"));
-					m_pHp->SetDestroy();
+					//ULOG(TEXT("player is Die"));
+					m_pHpHud->DestroyComponent();
 					DestroyOsiEnemy();
 					m_bHpDestroy = true;
 					return;
@@ -186,23 +186,6 @@ void AEnemyE4::Tick(float DeltaTime)
 		}
 	}
 
-	/*if (GetLife() == false) return;
-	if (m_pHp != nullptr )
-		m_pHp->Tick_Transform(GetActorLocation(), DeltaTime);
-
-	AActor* pPlayer = m_pAIController->DetectInPerception();
-	if (pPlayer != nullptr)
-	{
-		AGameCharacter* pTarget = Cast<AGameCharacter>(pPlayer);
-		if (pTarget != nullptr)
-		{
-			if (pTarget->GetLife() == false)
-			{
-				m_pHp->SetDestroy();
-				return;
-			}
-		}
-	}*/
 }
 
 float AEnemyE4::TakeDamage(float DamageAmount, struct FDamageEvent const & DamageEvent, class AController * EventInstigator, AActor * DamageCauser)
@@ -221,8 +204,10 @@ float AEnemyE4::TakeDamage(float DamageAmount, struct FDamageEvent const & Damag
 
 			m_fCurrentHp -= fDamage;
 
-			if (m_pHp != nullptr)
-				m_pHp->SetHit();
+			if (m_pHpHud != nullptr)
+			{
+				m_pHpHud->Hit();
+			}
 
 			bool bIsDead = m_fCurrentHp <= 0 ? true : false;
 
@@ -230,8 +215,10 @@ float AEnemyE4::TakeDamage(float DamageAmount, struct FDamageEvent const & Damag
 			{
 				SetLife(false);
 
-				if (m_pHp != nullptr)
-					m_pHp->SetDestroy();
+				if (m_pHpHud != nullptr)
+				{
+					m_pHpHud->DestroyComponent();
+				}
 
 				UState_EnemyE4_Die* pState = Cast<UState_EnemyE4_Die>(m_pStateMng->GetStateClassRef(static_cast<int32>(E_State_EnemyE4::E_Die)));
 				if (pState != nullptr)

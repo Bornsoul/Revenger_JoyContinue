@@ -72,10 +72,10 @@ void UWidget_SkillShieldItem::Tick_SkillShieldCoolTime(float fDeltaTime)
 			m_fCoolTime_CurTime = m_fCoolTime_End;
 			DeActive_CoolTime();
 			return;
-		}
+		}		
 
-		float fTime = m_fCoolTime_End > 1.0f ? 1.0f : m_fCoolTime_End;
-		if (UGameplayStatics::GetRealTimeSeconds(GetWorld()) - m_fCoolTime_Cur >= fTime)
+		//float fTime = m_fCoolTime_End > 1.0f ? 1.0f : m_fCoolTime_End;
+		if (UGameplayStatics::GetRealTimeSeconds(GetWorld()) - m_fCoolTime_Cur >= 1.0f)
 		{
 			m_fCoolTime_CurTime += 1.0f;
 			m_fCoolTime_Percent = m_fCoolTime_CurTime / m_fCoolTime_End * 1.0f;
@@ -84,16 +84,18 @@ void UWidget_SkillShieldItem::Tick_SkillShieldCoolTime(float fDeltaTime)
 
 		if (m_fCoolTime_End > 1.0f)
 		{
+			
 			for (float i = 0.0f; i < m_fCoolTime_Percent; i += fDeltaTime)
 			{
-				m_fCoolTime_Lerp = FMath::Lerp(m_fCoolTime_Lerp, 1.0f, i * fDeltaTime);
+				m_fCoolTime_Lerp = FMath::Lerp(m_fCoolTime_Lerp, m_fCoolTime_Percent, i * fDeltaTime);
 			}
+			//ULOG(TEXT("Percent : %f , Lerp : %f , CoolTime : %f"), m_fCoolTime_Percent, m_fCoolTime_Lerp, m_fCoolTime_End);
 			//m_fCoolTime_Lerp = FMath::Lerp(m_fCoolTime_Lerp, 1.0f, m_fCoolTime_Percent*fDeltaTime);
 			m_pCoolTime->SetPercent(m_fCoolTime_Lerp);
 		}
 		else
 		{
-			m_fCoolTime_Lerp = FMath::Lerp(m_fCoolTime_Lerp, 1.0f, 10.0f*fDeltaTime);
+			m_fCoolTime_Lerp = FMath::Lerp(m_fCoolTime_Lerp, 1.0f, .1f * fDeltaTime);
 			m_pCoolTime->SetPercent(m_fCoolTime_Lerp);
 		}
 	}

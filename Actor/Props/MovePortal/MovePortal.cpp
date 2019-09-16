@@ -51,7 +51,7 @@ void AMovePortal::BeginPlay()
 
 	m_vColliderSize = m_pCollider->GetScaledBoxExtent();	
 	m_pCollider->SetBoxExtent(FVector(0.0f, 0.0f, 0.0f), false);
-	if (m_bPortalActive == true)
+	if (m_bPortalActive == true)	
 		SpawnPortal();
 
 	m_bJHActive = m_bPortalActive;
@@ -64,12 +64,70 @@ void AMovePortal::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	m_pEndPortal = nullptr;
 	m_pStartPortal = nullptr;
 	m_bUsed = true;
+
 	for (int i = 0; i < m_pPortalArrow.Num(); i++)
 	{
 		if (m_pPortalArrow[i] != nullptr)
 		{
-			m_pPortalArrow[i]->ConditionalBeginDestroy();
+			//m_pPortalArrow[i]->ConditionalBeginDestroy();
+			m_pPortalArrow[i]->DestroyComponent();
 			m_pPortalArrow[i] = nullptr;
+		}
+	}
+
+	if (m_pPlayer != nullptr)
+	{
+		if (m_pPlayer->IsValidLowLevel())
+		{
+			m_pPlayer = nullptr;
+		}
+	}
+
+	if (m_pKeyStateMng != nullptr)
+	{
+		if (m_pKeyStateMng->IsValidLowLevel())
+		{
+			m_pKeyStateMng = nullptr;
+		}
+	}
+
+	if (m_pEndPortal != nullptr)
+	{
+		if (m_pEndPortal->IsValidLowLevel())
+		{
+			m_pEndPortal = nullptr;
+		}
+	}
+
+	if (m_pColliderPortal != nullptr)
+	{
+		if (m_pColliderPortal->IsValidLowLevel())
+		{
+			m_pColliderPortal = nullptr;
+		}
+	}
+
+	if (m_pCollider != nullptr)
+	{
+		if (m_pCollider->IsValidLowLevel())
+		{
+			m_pCollider = nullptr;
+		}
+	}
+
+	if (m_pPortal != nullptr)
+	{
+		if (m_pPortal->IsValidLowLevel())
+		{
+			m_pPortal = nullptr;
+		}
+	}
+
+	if (m_pStartPortal != nullptr)
+	{
+		if (m_pStartPortal->IsValidLowLevel())
+		{
+			m_pStartPortal = nullptr;
 		}
 	}
 }
@@ -79,22 +137,6 @@ void AMovePortal::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	
 	if (m_bActive == false) return;
-
-	/*if (m_bJHActive)
-	{
-		//m_pColliderPortal->SetCollisionResponseToChannel(ECC_Pawn, ECR_);
-		m_pColliderPortal->SetCollisionProfileName(TEXT("BlockAll"));
-
-	}
-	else
-	{
-		m_pColliderPortal->SetCollisionProfileName(TEXT("NoCollision"));
-	
-		
-	
-	}*/
-		
-
 
 	if (m_bUseAndDestroy == true)
 	{
@@ -108,7 +150,6 @@ void AMovePortal::Tick(float DeltaTime)
 				m_bDestroy = false;
 				m_bActive = false;
 				Destroy();
-				ULOG(TEXT("%s is Destroy"), *GetName());
 				return;
 			}
 		}
@@ -148,6 +189,7 @@ void AMovePortal::Tick(float DeltaTime)
 			{
 				m_pColliderPortal->SetVisibility(false);
 				m_pColliderPortal->SetCollisionProfileName(TEXT("NoCollision"));
+				SetCircleActive(false);
 				if(m_pPlayer!=nullptr) m_pPlayer->Control_Portal(m_pStartPortal, m_pEndPortal);
 				m_bGetIn = false;
 				m_bDestroy = true;
@@ -161,14 +203,13 @@ void AMovePortal::SpawnPortal()
 {
 	m_bActive = true;
 	m_pCollider->SetBoxExtent(m_vColliderSize, true);
-	m_pColliderPortal->SetCollisionProfileName(TEXT("BlockAll"));
-
+	SetCircleActive(true);
 }
 
 void AMovePortal::SetCircleActive(bool bActive)
 {
 	m_bJHActive = bActive;
-	//ULOG(TEXT("a"));
+
 	if ( bActive )
 		m_pColliderPortal->SetCollisionProfileName(TEXT("BlockAll"));		
 	else
@@ -180,9 +221,6 @@ void AMovePortal::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, clas
 	if (m_bActive == false) return;
 	m_bGetIn = true;
 
-	//if (m_nNextPortal < 0) return;
-	//if (m_pPortalArrow.Num() <= 0) return;
-
 	if (OtherActor && (OtherActor != this) && OtherComp)
 	{
 		if (m_pPlayer != nullptr) return;
@@ -190,12 +228,8 @@ void AMovePortal::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, clas
 		{			
 			AGBox* pActor = Cast<AGBox>(OtherActor);
 			if (pActor != nullptr)
-			{		
-							
+			{									
 				m_pPlayer = pActor;
-					
-				ULOG(TEXT("Portal Joy IN"));
-
 				return;
 			}
 		}
@@ -212,7 +246,6 @@ void AMovePortal::OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class 
 			m_pColliderPortal->SetCollisionProfileName(TEXT("BlockAll"));
 
 			m_bGetIn = false;
-			ULOG(TEXT("Portal Joy Out"));
 			return;
 		}
 	}

@@ -39,27 +39,8 @@ private:
 	UPROPERTY()
 		class UCpt_MaterialEffect* m_pMaterialEffect;
 
-	/*UPROPERTY()
-		class UCpt_EnemyHp* m_pHp;*/
-
-	UPROPERTY()
-		class UCpt_EnemyBossHp* m_pBossHp;
-
-	UPROPERTY(EditAnywhere, Category = HpBar)
-		FVector2D m_vHpPos = FVector2D(10.0f, 10.0f);
-	
-	UPROPERTY(EditAnywhere, Category = HpBar)
-		float m_fHpSize = 20.0f;
-
-	/*UPROPERTY()
-		class USC_WidgetEnemyHp* m_pHp;
-
-	UPROPERTY(EditAnywhere, Category = HpBar)
-		FVector2D m_vHpPos = FVector2D(0.0f, 0.0f);
-
-	UPROPERTY(EditAnywhere, Category = HpBar)
-		FVector2D m_vHpSize = FVector2D(10.0f, -10.0f);*/
-
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Property", meta = (AllowPrivateAccess = "true"))
+		class UCpt_BossHpSystem* m_pBossHpShield;
 	
 	UPROPERTY()
 		class UCpt_FootPushLine* m_pFootPushLine;
@@ -82,8 +63,9 @@ private:
 private:
 	float m_fMovementDir = 0.0f;
 
-	UPROPERTY(EditAnywhere, Category = Option)
-		float m_fCurrentHp = 3.0f;
+	
+	float m_fCurrentHp = 3.0f;
+	float m_fCurrentBarrier = 0.0f;
 
 	float m_fEnemyCheckTime = 0.0f;
 	bool m_bEnemyCheck = false;
@@ -103,7 +85,7 @@ public:
 	FORCEINLINE class UCpt_WarningSpace* GetWarningSpace() { return m_pWarningSpace; }
 	FORCEINLINE class AEnemyBarrier* GetBarrier() { return m_pBarrier; }
 	FORCEINLINE class ABossEnemySpawnMng* GetAISpawnMng() { return m_pSpawnMng; }
-
+	FORCEINLINE class UCpt_BossHpSystem* GetHpShield() { return m_pBossHpShield; }
 public:
 	AGBoxEnemy_Close();
 	virtual void PossessedBy(AController* NewController);
@@ -132,6 +114,8 @@ public:
 	void DeActive_Barrier();
 
 	void SpawnMonsters();
+	void SetBarrierCount(int32 nCount) { m_fCurrentBarrier = nCount;  }
+	int32 GetBarrierCount() { return m_fCurrentBarrier; }
 
 public:
 	FGenericTeamId GetGenericTeamId() const override { return 0; }

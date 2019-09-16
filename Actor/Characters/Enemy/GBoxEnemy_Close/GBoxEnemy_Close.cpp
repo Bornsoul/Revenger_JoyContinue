@@ -4,9 +4,9 @@
 #include "AIC_GBoxEnemy_Close.h"
 #include "AnimInst_GBoxEnemy_Close.h"
 #include "State/StateMng_GBEClose.h"
+#include "Actor/Characters/Player/GBox/GBox.h"
 
-#include "UI/Enemy/HpSystem/Cpt_EnemyHp.h"
-#include "UI/Enemy/HpBossSystem/Cpt_EnemyBossHp.h"
+#include "UI/Enemy/NHpBossSystem/Cpt_BossHpSystem.h"
 
 #include "Libraries/Components/AnimationMng/Cpt_AnimationMng.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -67,12 +67,9 @@ AGBoxEnemy_Close::AGBoxEnemy_Close()
 	m_pCamShake->AddCameraShakeClass(TEXT("Landing"), TEXT("/Game/1_Project_Main/1_Blueprints/Components/CameraShake/BP_CamShake_Landing.BP_CamShake_Landing_C"));
 	m_pCamShake->AddCameraShakeClass(TEXT("JumpAttack"), TEXT("/Game/1_Project_Main/1_Blueprints/Components/CameraShake/BP_CamShake_JumpAttack.BP_CamShake_JumpAttack_C"));
 
-
 	m_pWarningSpace = CreateDefaultSubobject<UCpt_WarningSpace>(TEXT("WarningSpace"));
 
-	//m_pHp = CreateDefaultSubobject<UCpt_EnemyHp>(TEXT("EnemyHp"));
-
-	m_pBossHp = CreateDefaultSubobject<UCpt_EnemyBossHp>(TEXT("EnemyBossHp"));
+	m_pBossHpShield = CreateDefaultSubobject<UCpt_BossHpSystem>(TEXT("BossHpSys"));
 
 	static ConstructorHelpers::FClassFinder<AEnemyBarrier> Const_Barrier(TEXT("/Game/1_Project_Main/1_Blueprints/Actor/Characters/Enemy/BP_EnemyBarrier.BP_EnemyBarrier_C"));
 	if (Const_Barrier.Succeeded()) m_pInst_Barrier = Const_Barrier.Class;
@@ -115,6 +112,7 @@ void AGBoxEnemy_Close::SpawnMonsters()
 void AGBoxEnemy_Close::BeginPlay()
 {
 	Super::BeginPlay();
+
 	for (TActorIterator<AActor> ActorItr(GetWorld()); ActorItr; ++ActorItr)
 	{
 		if (*ActorItr != nullptr)
@@ -130,19 +128,20 @@ void AGBoxEnemy_Close::BeginPlay()
 	GetController()->SetControlRotation(FRotator::ZeroRotator);
 	SetStartLoc(GetActorLocation());
 
-	/*if (m_pHp != nullptr)
-	{
-		m_pHp->AddHeart(this, 3);
-		m_pHp->SetHeartSize(m_vHpSize);
-		ULOG(TEXT("HpBar is Online"));
-	}*/
+	m_fCurrentHp = GetEnemyHp();
+	m_fCurrentBarrier = GetEnemyBarrier();
+	GetCharacterMovement()->MaxWalkSpeed = GetEnemySpeed();
 
-	if (m_pBossHp != nullptr)
-	{
-		m_pBossHp->AddHeart(static_cast<int32>(m_fCurrentHp));
-		m_pBossHp->SetHeartPosition(m_vHpPos, m_fHpSize);
+	AEnemyBarrier* pSrc = GetWorld()->SpawnActor<AEnemyBarrier>(m_pInst_Barrier, GetActorLocation(), FRotator::ZeroRotator);
+	if (pSrc == nullptr) return;
+	m_pBarrier = pSrc;
+	m_pBarrier->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepWorldTransform, TEXT("Bip001-Pelvis"));
+	m_pBarrier->Init(FMath::FloorToInt(m_fCurrentBarrier));
+	m_pBarrier->Active_Barrier();
 
-		ULOG(TEXT("Boss Hp is Online"));
+	if (m_pBossHpShield != nullptr)
+	{
+		m_pBossHpShield->CreateHpShield(m_fCurrentHp, m_fCurrentBarrier);
 	}
 
 	m_pAnimInstance = Cast<UAnimInst_GBoxEnemy_Close>(GetMesh()->GetAnimInstance());
@@ -179,18 +178,7 @@ void AGBoxEnemy_Close::BeginPlay()
 	m_pMaterialEffect->Init(GetMesh());
 	m_pMaterialEffect->AddEffect(E_MaterialEffect::E_Hit2);
 
-	if (m_pInst_Barrier != nullptr)
-	{
-		AEnemyBarrier* pSrc = GetWorld()->SpawnActor<AEnemyBarrier>(m_pInst_Barrier, GetActorLocation(), FRotator::ZeroRotator);
-		if (pSrc == nullptr) return;
-		m_pBarrier = pSrc;
-		m_pBarrier->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepWorldTransform, TEXT("Bip001-Pelvis"));
-		m_pBarrier->Init(5);
-		m_pBarrier->Active_Barrier();
-	}
-
 	AddOisEnemy(this, 1);
-
 }
 
 void AGBoxEnemy_Close::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -199,14 +187,45 @@ void AGBoxEnemy_Close::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 	if (m_pBarrier != nullptr)
 	{
-		m_pBarrier->Destroy();
-		m_pBarrier = nullptr;
+		if (m_pBarrier->IsValidLowLevel())
+		{
+			m_pBarrier->Destroy();
+			m_pBarrier = nullptr;
+		}
 	}
 
 	if (m_pStateMng != nullptr)
-		m_pStateMng->Destroy();
+	{
+		if (m_pStateMng->IsValidLowLevel())
+		{
+			m_pStateMng->Destroy();
+			m_pStateMng = nullptr;
+		}
+	}
 
-	m_pStateMng = nullptr;
+	if (m_pSpawnMng != nullptr)
+	{
+		if (m_pSpawnMng->IsValidLowLevel())
+		{			
+			m_pSpawnMng = nullptr;
+		}
+	}
+
+	if (m_pWarningSpace != nullptr)
+	{
+		if (m_pWarningSpace->IsValidLowLevel())
+		{
+			m_pWarningSpace = nullptr;
+		}
+	}
+
+	if (m_pBossHpShield != nullptr)
+	{
+		if (m_pBossHpShield->IsValidLowLevel())
+		{
+			m_pBossHpShield = nullptr;
+		}
+	}
 }
 
 void AGBoxEnemy_Close::Tick(float DeltaTime)
@@ -229,8 +248,11 @@ void AGBoxEnemy_Close::Tick(float DeltaTime)
 			{
 				if (pTarget->ActorHasTag("PlayerDie"))
 				{
-					if (m_pBossHp != nullptr)
-						m_pBossHp->SetDestroy();
+					if (m_pBossHpShield != nullptr)
+					{
+						m_pBossHpShield->DestroySystem();
+					}
+
 					DestroyOsiEnemy();
 
 					m_bHpDestroy = true;
@@ -240,23 +262,6 @@ void AGBoxEnemy_Close::Tick(float DeltaTime)
 		}
 	}
 
-	/*if (GetLife() == false) return;
-	if (m_pHp != nullptr )
-		m_pHp->Tick_Transform(GetActorLocation(), DeltaTime);
-
-	AActor* pPlayer = m_pAIController->DetectInPerception();
-	if (pPlayer != nullptr)
-	{
-		AGameCharacter* pTarget = Cast<AGameCharacter>(pPlayer);
-		if (pTarget != nullptr)
-		{
-			if (pTarget->GetLife() == false)
-			{
-				m_pHp->SetDestroy();
-				return;
-			}
-		}
-	}*/
 }
 
 void AGBoxEnemy_Close::Tick_EnemyCheck(float fDeltaTime)
@@ -271,7 +276,6 @@ void AGBoxEnemy_Close::Tick_EnemyCheck(float fDeltaTime)
 		m_fEnemyCheckTime = 0.0f;
 		if (m_pSpawnMng->GetIsMonstarLive() == false)
 		{
-			//ULOG(TEXT("aaaa"));
 			m_bEnemyCheck = false;
 			UState_GBEC_Panic* pState = Cast<UState_GBEC_Panic>(m_pStateMng->GetStateClassRef(static_cast<int32>(E_State_GBEClose::E_Panic)));
 			if (pState != nullptr)
@@ -295,13 +299,12 @@ float AGBoxEnemy_Close::TakeDamage(float DamageAmount, struct FDamageEvent const
 	{
 		if (eDamageEventClass == E_DamageEventClass::E_Hit)
 		{
-			//	ULOG(TEXT("Hit"));
-
-
 
 			FDamageEvent_Hit* pBloodDamageEvent = (FDamageEvent_Hit*)&DamageEvent;
-			if (m_pBarrier->GetActiveState() == true)// && m_pStateMng->GetCurrentState() != static_cast<int32>(E_State_GBEClose::E_Panic))
+			if (m_pBarrier->GetActiveState() == true)
 			{
+				//m_fCurrentBarrier -= 1;
+				m_pBossHpShield->Hit_Shield();
 				m_pBarrier->Hit_Barrier(1);
 				if (m_pBarrier->GetActiveState() == true)
 				{
@@ -309,47 +312,45 @@ float AGBoxEnemy_Close::TakeDamage(float DamageAmount, struct FDamageEvent const
 				}
 				else
 				{
-
-					//if (m_pStateMng->GetCurrentState() != static_cast<int32>(E_State_GBEClose::E_Panic))
-					//{
 					UState_GBEC_Panic* pState = Cast<UState_GBEC_Panic>(m_pStateMng->GetStateClassRef(static_cast<int32>(E_State_GBEClose::E_Panic)));
 					if (pState != nullptr)
 					{
+						m_pBossHpShield->Hit_Shield(true);
 						pState->Set_Break(true);
 						m_pStateMng->ChangeState(static_cast<int32>(E_State_GBEClose::E_Panic));
 					}
-					//	}
 
 					return fDamage;
 				}
 			}
 
-
 			m_fCurrentHp -= fDamage;
 
-			if (m_pBossHp != nullptr)
-				m_pBossHp->SetHit();
-
-			/*if (m_pHp != nullptr)
-				m_pHp->SetHit();*/
+			if (m_pBossHpShield != nullptr)
+			{
+				m_pBossHpShield->Hit_Hp();
+			}
 
 			bool bIsDead = m_fCurrentHp <= 0 ? true : false;
 
 			if (bIsDead == true)
 			{
 				SetLife(false);
-				if (m_pBossHp != nullptr)
-					m_pBossHp->SetDestroy();
-				/*if (m_pHp != nullptr)
-					m_pHp->SetDestroy();*/
+				if (m_pBossHpShield != nullptr)
+				{
+					m_pBossHpShield->DestroySystem();
+				}
 
 				UState_GBEC_Die* pState = Cast<UState_GBEC_Die>(m_pStateMng->GetStateClassRef(static_cast<int32>(E_State_GBEClose::E_Die)));
 				if (pState != nullptr)
 				{
-					//SetRagdollPhysics(pDamageEvent->m_vHitPoint, 10.0f);
 					pState->SetHitDirection(pBloodDamageEvent->m_vAttackerLocaction);
 					m_pStateMng->ChangeState(static_cast<int32>(E_State_GBEClose::E_Die));
+
+					m_pBossHpShield->Hit_Hp(true);
+					m_pBossHpShield->Hit_Shield(true);
 					GetBarrier()->Hit_Barrier(100);
+
 					if (m_pSpawnMng != nullptr)
 					{
 						m_pSpawnMng->KillAllMonsters();
@@ -368,30 +369,7 @@ float AGBoxEnemy_Close::TakeDamage(float DamageAmount, struct FDamageEvent const
 					//m_pStateMng->ChangeState(static_cast<int32>(E_State_GBEClose::E_Panic));
 				}
 			}
-
-
-
-			/*UState_GBEC_Hit* pState = Cast<UState_GBEC_Hit>(m_pStateMng->GetStateClassRef(static_cast<int32>(E_State_GBEClose::E_Hit)));
-			if (pState != nullptr)
-			{
-
-				pState->SetHitDirection(pBloodDamageEvent->m_vAttackerLocaction);
-				m_pStateMng->ChangeState(static_cast<int32>(E_State_GBEClose::E_Hit));
-				return fDamage;
-			}*/
 		}
-		/*else if (eDamageEventClass == E_DamageEventClass::E_Parring)
-		{
-			ULOG(TEXT("Parring"));
-			FDamageEvent_Parring* pBloodDamageEvent = (FDamageEvent_Parring*)&DamageEvent;
-			UState_GBEC_Hit* pState = Cast<UState_GBEC_Hit>(m_pStateMng->GetStateClassRef(static_cast<int32>(E_State_GBEClose::E_Hit)));
-			if (pState != nullptr)
-			{
-				pState->SetHitDirection(pBloodDamageEvent->m_vAttackerLocaction);
-				m_pStateMng->ChangeState(static_cast<int32>(E_State_GBEClose::E_Hit));
-				return fDamage;
-			}
-		}*/
 	}
 
 	return fDamage;

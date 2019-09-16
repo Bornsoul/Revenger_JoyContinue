@@ -5,10 +5,11 @@
 #include "AIC_EnemyE5.h"
 #include "EnemyE5_Missile.h"
 #include "State/StateMng_EnemyE5.h"
-
-#include "UI/Enemy/HpSystem/Cpt_EnemyHp.h"
-
+#include "Actor/Characters/Player/GBox/GBox.h"
 #include "Actor/Props/FootPush/Cpt_FootPushLine.h"
+
+#include "UI/Enemy/NHpSystem/Cpt_EnemyHpComponent.h"
+
 #include "Libraries/Components/MaterialEffect/Cpt_MaterialEffect.h"
 #include "Libraries/Components/ParticleMng/Cpt_ParticleMng.h"
 #include "Libraries/Components/SoundMng/Cpt_SoundMng.h"
@@ -48,13 +49,16 @@ AEnemyE5::AEnemyE5()
 	m_pFootPushLine->SetSKMesh(this);
 	m_pFootPushLine->AddBone(TEXT("Bone_Body"));
 
-	m_pHp = CreateDefaultSubobject<UCpt_EnemyHp>(TEXT("EnemyHp"));
+	m_pHpHud = CreateDefaultSubobject<UCpt_EnemyHpComponent>(TEXT("EnemyHpCpt"));
 
 	static ConstructorHelpers::FClassFinder<UAnimInstance> Const_AnimInst(TEXT("/Game/1_Project_Main/2_Contents/Actors/Enemy/E5/Animation/BP_Anim_Enemy5.BP_Anim_Enemy5_C"));
 	if (Const_AnimInst.Succeeded()) GetMesh()->SetAnimInstanceClass(Const_AnimInst.Class);
 
 	static ConstructorHelpers::FClassFinder<AAIC_EnemyE5> Const_AIC(TEXT("/Game/1_Project_Main/1_Blueprints/Actor/Characters/Enemy/EnemyE5/BP_AIC_EnemyE5.BP_AIC_EnemyE5_C"));
 	if (Const_AIC.Succeeded()) AIControllerClass = Const_AIC.Class;
+
+	static ConstructorHelpers::FClassFinder<AEnemyE5_Missile> Const_Missile(TEXT("/Game/1_Project_Main/1_Blueprints/Actor/Characters/Enemy/EnemyE5/BP_EnemyE5_Missile.BP_EnemyE5_Missile_C"));
+	if (Const_Missile.Succeeded()) m_pInstance_Bullet = Const_Missile.Class;
 
 }
 
@@ -81,11 +85,11 @@ void AEnemyE5::BeginPlay()
 	GetController()->SetControlRotation(FRotator::ZeroRotator);
 	SetStartLoc(GetActorLocation());
 
-	if (m_pHp != nullptr)
+	m_fCurrentHp = GetEnemyHp();
+
+	if (m_pHpHud != nullptr)
 	{
-		m_pHp->AddHeart(this, static_cast<int32>(m_fCurrentHp));
-		m_pHp->SetHeartSize(m_vHpPos, m_vHpSize);
-		ULOG(TEXT("HpBar is Online : %d"), (int32)m_fCurrentHp);
+		m_pHpHud->CreateHp(m_fCurrentHp);
 	}
 
 	m_pAnimInstance = Cast<UAnimInst_EnemyE5>(GetMesh()->GetAnimInstance());
@@ -162,7 +166,7 @@ void AEnemyE5::Tick(float DeltaTime)
 			{
 				if (pTarget->ActorHasTag("PlayerDie"))
 				{
-					m_pHp->SetDestroy();
+					m_pHpHud->DestroyComponent();
 					DestroyOsiEnemy();
 					m_bHpDestroy = true;
 					return;
@@ -187,8 +191,10 @@ float AEnemyE5::TakeDamage(float DamageAmount, struct FDamageEvent const & Damag
 
 			m_fCurrentHp -= fDamage;
 
-			if (m_pHp != nullptr)
-				m_pHp->SetHit();
+			if (m_pHpHud != nullptr)
+			{
+				m_pHpHud->Hit();
+			}
 
 			bool bIsDead = m_fCurrentHp <= 0 ? true : false;
 
@@ -196,8 +202,10 @@ float AEnemyE5::TakeDamage(float DamageAmount, struct FDamageEvent const & Damag
 			{
 				SetLife(false);
 
-				if (m_pHp != nullptr)
-					m_pHp->SetDestroy();
+				if (m_pHpHud != nullptr)
+				{
+					m_pHpHud->DestroyComponent();
+				}
 
 				UState_EnemyE5_Die* pState = Cast<UState_EnemyE5_Die>(m_pStateMng->GetStateClassRef(static_cast<int32>(E_State_EnemyE5::E_Die)));
 				if (pState != nullptr)

@@ -56,6 +56,20 @@ void UWidget_TopTitleItem::NativeTick(const FGeometry& MyGeometry, float InDelta
 	}
 }
 
+void UWidget_TopTitleItem::NativeDestruct()
+{
+	Super::NativeDestruct();
+
+	if (m_pWidgetAni != nullptr)
+	{
+		if (m_pWidgetAni->IsValidLowLevel())
+		{
+			m_pWidgetAni->Destroy();
+			m_pWidgetAni = nullptr;
+		}
+	}
+}
+
 void UWidget_TopTitleItem::SetActive(bool bActive)
 {
 	m_bActive = bActive;

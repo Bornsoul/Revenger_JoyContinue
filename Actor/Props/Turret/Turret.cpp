@@ -38,6 +38,56 @@ void ATurret::BeginPlay()
 	//SetTurretActive(true);
 }
 
+void ATurret::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	if (m_pSceneComp != nullptr)
+	{
+		if (m_pSceneComp->IsValidLowLevel())
+		{
+			m_pSceneComp->DestroyComponent();
+			m_pSceneComp = nullptr;
+		}
+	}
+
+	if (m_pParticleMng != nullptr)
+	{
+		if (m_pParticleMng->IsValidLowLevel())
+		{
+			m_pParticleMng->DestroyComponent();
+			m_pParticleMng = nullptr;
+		}
+	}
+
+	if (m_pLaserParticle != nullptr)
+	{
+		if (m_pLaserParticle->IsValidLowLevel())
+		{
+			m_pLaserParticle->DestroyComponent();
+			m_pLaserParticle = nullptr;
+		}
+	}
+
+	if (m_pBulletArrowComp != nullptr)
+	{
+		if (m_pBulletArrowComp->IsValidLowLevel())
+		{
+			m_pBulletArrowComp->DestroyComponent();
+			m_pBulletArrowComp = nullptr;
+		}
+	}
+
+	if (m_pArrowComp != nullptr)
+	{
+		if (m_pArrowComp->IsValidLowLevel())
+		{
+			m_pArrowComp->DestroyComponent();
+			m_pArrowComp = nullptr;
+		}
+	}
+}
+
 void ATurret::SetTurretActive(bool bActive)
 {
 	m_bActive = bActive;
@@ -82,9 +132,9 @@ void ATurret::Tick(float DeltaTime)
 			break;
 		case 2:
 			m_fTime += DeltaTime;
-			if (m_fTime >= 0.7f)
+			if (m_fTime >= 0.2f)
 			{				
-				CreateBullet(m_pBulletArrowComp->GetComponentLocation(), m_pArrowComp->GetComponentLocation());
+				m_pBullet = CreateBullet(m_pBulletArrowComp->GetComponentLocation(), m_pArrowComp->GetComponentLocation());
 				m_fTime = 0.0f;
 				nState = 3;
 			}
@@ -103,19 +153,28 @@ void ATurret::Tick(float DeltaTime)
 		if (m_pLaserParticle != nullptr)
 		{
 			m_pLaserParticle->SetBeamEndPoint(0, m_pArrowComp->GetComponentLocation());
-		}
+		}		
+	}
 
-		
+	if (m_pBullet != nullptr)
+	{
+		if (m_pBullet->GetSuccessHit())
+		{
+			m_bSuccessHit = true;
+			m_pBullet = nullptr;
+			return;
+		}
 	}
 }
 
 AEnemyE4_Missile * ATurret::CreateBullet(FVector vShootLoc, FVector vTargetLoc)
 {
 	if (m_pInstance_Bullet == nullptr) return nullptr;
+	m_pBullet = nullptr;
 
 	AEnemyE4_Missile* pBullet = GetWorld()->SpawnActor<AEnemyE4_Missile>(m_pInstance_Bullet);
 	if (pBullet == nullptr) return nullptr;
-
+	
 	pBullet->Shoot(this, vShootLoc, vTargetLoc);
 	return pBullet;
 }

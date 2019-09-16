@@ -67,7 +67,7 @@ void AAIC_Citizen::InitAI()
 	
 	SetActiveAI(true);
 
-	ULOG(TEXT("AI Controller Start"));
+	//ULOG(TEXT("AI Controller Start"));
 }
 
 void AAIC_Citizen::Tick(float DeltaTime)

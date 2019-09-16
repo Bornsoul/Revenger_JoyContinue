@@ -43,6 +43,7 @@ private:
 public:
 	virtual void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	virtual void NativeDestruct() override;
 
 	UFUNCTION(BlueprintCallable)
 		void SetPlayAnimation(FString sAniName, bool bRevers = false);

@@ -26,6 +26,19 @@ void UWidgetAni_Mng::Init(class UUserWidget* pWidget)
 	}*/
 }
 
+void UWidgetAni_Mng::Destroy()
+{
+	if (m_pWidget != nullptr)
+	{
+		if (m_pWidget->IsValidLowLevel())
+		{
+			m_pWidget = nullptr;
+		}
+	}
+
+	m_pAnimations.Empty();
+}
+
 void UWidgetAni_Mng::SetAnimation(TMap<FString, class UWidgetAnimation*>& pResult)
 {
 	pResult.Empty();

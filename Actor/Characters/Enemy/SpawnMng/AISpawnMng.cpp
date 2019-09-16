@@ -1,19 +1,19 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "AISpawnMng.h"
-#include "AISpawn_ArrowPin.h"
 #include "AISpawn_Wall.h"
 
 #include "Actor/Props/MovePortal/MovePortal.h"
 #include "Actor/Characters/Npc/CitizenCage/CitizenCage.h"
 #include "Components/BoxComponent.h"
-
+#include "Actor/SaveData/Cpt_GameSave.h"
 #include "Actor/Characters/Player/GBox/GBox.h"
+
+#include "Instance/GameInst_JoyContinue.h"
 
 // Sets default values
 AAISpawnMng::AAISpawnMng()
 {
-	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	m_pCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("Collider"));
@@ -22,18 +22,43 @@ AAISpawnMng::AAISpawnMng()
 	m_pCollider->SetCollisionResponseToChannel(ECC_Pawn, ECollisionResponse::ECR_Overlap);
 
 	RootComponent = m_pCollider;
+
+	m_pSaveData = CreateDefaultSubobject<UCpt_GameSave>(TEXT("SaveData"));
+	if (m_pSaveData == nullptr)
+	{
+		ULOG(TEXT("SaveData is nullptr"));
+		return;
+	}
 }
 
-// Called when the game starts or when spawned
 void AAISpawnMng::BeginPlay()
 {
 	Super::BeginPlay();
 
-	TArray<UActorComponent*> pArrowArray = GetComponentsByClass(UAISpawn_ArrowPin::StaticClass());
+	/*if (m_pSaveData->Check_DataValid())
+	{
+		m_nDifficultLevel = m_pSaveData->Load_Data()->m_nDifficulty;
+		
+	}
+	else
+	{
+		ULOG(TEXT("Data is Lost"));
+		return;
+	}*/
+	
+	UGameInst_JoyContinue* pGInst = Cast<UGameInst_JoyContinue>(GetWorld()->GetGameInstance());
+	if (pGInst != nullptr)
+	{
+		pGInst->SetDifficulty(m_nDifficultLevel);
+	}
+
+	TArray<UActorComponent*> pArrowArray = GetComponentsByClass(UAISpawn_ArrowPin::StaticClass());	
 	for (int i = 0; i < pArrowArray.Num(); i++)
 	{
+	
 		UAISpawn_ArrowPin* pObj = Cast<UAISpawn_ArrowPin>(pArrowArray[i]);
-		if (pObj == nullptr) continue;
+		if (pObj == nullptr) continue;		
+		pObj->SetDifficulty(m_nDifficultLevel);
 		m_pSpawnPins.Add(pObj);
 
 		if (pObj->GetMaxPhase() >= m_nMaxPhase)
@@ -59,12 +84,13 @@ void AAISpawnMng::BeginPlay()
 	}
 	else
 	{
-		ULOG(TEXT("Portal is Nullptr"))
+		ULOG(TEXT("%s | Portal is Nullptr"), *GetName());
 	}
+
+
 	m_nCurrPhase = 0;
 	m_bActive = false;
 	m_bPortalUsed = false;
-	//ULOG(TEXT("Max Phase = %d"), m_nMaxPhase);
 }
 
 void  AAISpawnMng::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -73,16 +99,39 @@ void  AAISpawnMng::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	m_pSpawnPins.Empty();
 	m_pSpawnWalls.Empty();
 	
-	if (m_pPortal != nullptr)
+	if (m_pSaveData != nullptr)
 	{
-		m_pPortal->ConditionalBeginDestroy();
-		m_pPortal = nullptr;
+		if (m_pSaveData->IsValidLowLevel())
+		{
+			m_pSaveData = nullptr;
+		}
 	}
 
-	ULOG(TEXT("%s is Destroy"), *GetName());
+	if (m_pPortal != nullptr)
+	{
+		if (m_pPortal->IsValidLowLevel())
+		{
+			m_pPortal = nullptr; 
+		}
+	}
+
+	if (m_pCitizenCage != nullptr)
+	{
+		if (m_pCitizenCage->IsValidLowLevel())
+		{
+			m_pCitizenCage = nullptr;
+		}
+	}
+
+	if (m_pCollider != nullptr)
+	{
+		if (m_pCollider->IsValidLowLevel())
+		{
+			m_pCollider = nullptr;
+		}
+	}
 }
 
-// Called every frame
 void AAISpawnMng::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -108,18 +157,10 @@ void AAISpawnMng::Tick(float DeltaTime)
 		if (bCheck == false && m_nCurrPhase > m_nMaxPhase)
 		{
 			StageClear();
-			ULOG(TEXT("End"));
+			//ULOG(TEXT("End"));
 		}
 
-		/*if (m_bStageClear == true)
-		{
-			if (m_pCitizenCage == nullptr)
-			{
-				m_pCitizenCage->SetMovePortal(m_pPortal);
-				m_pCitizenCage->SetCitizenActive(true);
-				return;
-			}
-		}*/
+	
 	}
 	else
 	{
@@ -140,6 +181,9 @@ void AAISpawnMng::Tick(float DeltaTime)
 
 void AAISpawnMng::SpawnAIs()
 {
+	//m_pDifficultSetting[m_nDifficultLevel]m_pMobMaxHp[]
+	
+
 	for (int i = 0; i < m_pSpawnPins.Num(); i++)
 	{
 		m_pSpawnPins[i]->SpawnAI(m_nCurrPhase);
@@ -193,11 +237,6 @@ void AAISpawnMng::StageClear()
 	}
 
 	m_bStageClear = true;
-	/*for (int i = 0; i < m_pDoors.Num(); i++)
-	{
-		m_pDoors[i]->Open();
-	}*/
-
 
 }
 
@@ -209,10 +248,7 @@ void AAISpawnMng::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, clas
 		if (OtherActor->ActorHasTag(FName(TEXT("Player"))) == true)
 		{
 			m_bActive = true;
-			/*for (int i = 0; i < m_pDoors.Num(); i++)
-			{
-				m_pDoors[i]->Close();
-			}*/
+
 			SpawnAIs();
 		}
 	}
@@ -227,4 +263,10 @@ void AAISpawnMng::KillAllMonsters()
 
 		m_pSpawnPins[i]->KillAI();
 	}
+}
+
+void AAISpawnMng::BeginedOverlap()
+{
+	m_bActive = true;
+	SpawnAIs();
 }

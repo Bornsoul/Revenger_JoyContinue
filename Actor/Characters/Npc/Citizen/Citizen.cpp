@@ -4,6 +4,7 @@
 #include "AnimInst_Citizen.h"
 #include "AIC_Citizen.h"
 #include "Actor/Characters/Player/GBox/GBox.h"
+#include "UI/NewGameHUD/Widget/Widget_SayBubble/Cpt_SayBubble.h"
 
 #include "Components/BoxComponent.h"
 #include "Libraries/Components/AnimationMng/Cpt_AnimationMng.h"
@@ -30,6 +31,9 @@ ACitizen::ACitizen()
 	m_pAnimationMng->SetAnimList(TEXT("/Game/1_Project_Main/1_Blueprints/Actor/Characters/NPC/Citizen/Bp_AnimList_Citizen.Bp_AnimList_Citizen_C"));
 
 	m_pKeyStateMng = CreateDefaultSubobject<UCpt_KeyStateMng>(TEXT("KeyStateMng"));
+
+	m_pHelpSay = CreateDefaultSubobject<UCpt_SayBubble>(TEXT("HelpSay"));
+	m_pThankSay = CreateDefaultSubobject<UCpt_SayBubble>(TEXT("ThanksSay"));
 
 	static ConstructorHelpers::FClassFinder<UAnimInstance> Const_AnimInst(TEXT("/Game/1_Project_Main/2_Contents/Actors/NPC/Citizens/Animation/BP_AnimInst_Citizen.BP_AnimInst_Citizen_C"));
 	if (Const_AnimInst.Succeeded()) GetMesh()->SetAnimInstanceClass(Const_AnimInst.Class);
@@ -78,7 +82,29 @@ void ACitizen::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
-	m_pPlayer = nullptr;
+	if (m_pThankSay != nullptr)
+	{
+		if (m_pThankSay->IsValidLowLevel())
+		{
+			m_pThankSay = nullptr;
+		}
+	}
+
+	if (m_pHelpSay != nullptr)
+	{
+		if (m_pHelpSay->IsValidLowLevel())
+		{
+			m_pHelpSay = nullptr;
+		}
+	}
+
+	if (m_pPlayer != nullptr)
+	{
+		if (m_pPlayer->IsValidLowLevel())
+		{
+			m_pPlayer = nullptr;
+		}
+	}
 }
 
 void ACitizen::Tick(float DeltaTime)
@@ -107,8 +133,8 @@ void ACitizen::Tick(float DeltaTime)
 
 				if (m_pKeyStateMng->GetKeyIsJustRelease(EKeys::F) == true)
 				{
-					//ULOG(TEXT("Happy"));
-					m_bHappyMotion = true;
+					//ULOG(TEXT("Happy"));					
+					m_bHappyMotion = true;					
 					m_pAnimationMng->PlayAnimationSequnceBase("Happy", "DefaultSlot");
 					return;
 				}
@@ -142,10 +168,20 @@ void ACitizen::CharacterMessage(FString sMessage)
 	}	 
 	else if (sMessage == "Happy")
 	{
+		if (m_pThankSay != nullptr)
+		{
+			m_pThankSay->PlaySaying();
+		}
+
 		m_bState_Happy = true;
 	}
 	else if (sMessage == "FreeEnd")
 	{
+		if (m_pHelpSay != nullptr)
+		{
+			m_pHelpSay->StopSaying();
+		}
+
 		m_bFreeMotionEnd = true;
 		m_bHappyMotion = true;
 		m_pAnimationMng->PlayAnimationSequnceBase("Happy", "DefaultSlot");

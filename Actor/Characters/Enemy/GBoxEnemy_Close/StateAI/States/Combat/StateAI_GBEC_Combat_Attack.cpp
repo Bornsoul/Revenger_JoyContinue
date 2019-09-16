@@ -30,6 +30,7 @@ void UStateAI_GBEC_Combat_Attack::Update(float fDeltaTime)
 	if ( pTarget == nullptr ) 
 	{
 		ULOG(TEXT("Combat Attack DetectIn is nullptr"));
+		ChangeState(static_cast<int32>(E_StateAI_GBEClose::E_Normal));
 		return;
 	}
 

@@ -48,8 +48,6 @@ void UStateAI_EnemyE4_Combat_Attack::Update(float fDeltaTime)
 			}
 		}
 	}
-
-
 }
 
 void UStateAI_EnemyE4_Combat_Attack::StateMessage(FString StateMessage)

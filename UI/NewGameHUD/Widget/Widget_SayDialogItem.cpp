@@ -2,6 +2,7 @@
 
 #include "Widget_SayDialogItem.h"
 #include "UI/Core/WidgetAni_Mng.h"
+#include "Components/TextBlock.h"
 #include "Kismet/KismetMathLibrary.h"
 
 void UWidget_SayDialogItem::NativePreConstruct()
@@ -25,12 +26,49 @@ void UWidget_SayDialogItem::NativeConstruct()
 		return;
 	}
 
+	m_pSayText = Cast<UTextBlock>(GetWidgetFromName(TEXT("Say")));
+	if (m_pSayText == nullptr)
+	{
+		ULOG(TEXT("Say Text is nullptr"));
+		return;
+	}
+
 }
 
 void UWidget_SayDialogItem::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
+}
+
+void UWidget_SayDialogItem::NativeDestruct()
+{
+	Super::NativeDestruct();
+
+	if (m_pWidgetAni != nullptr)
+	{
+		if (m_pWidgetAni->IsValidLowLevel())
+		{
+			m_pWidgetAni->Destroy();
+			m_pWidgetAni = nullptr;
+		}
+	}
+
+	if (m_pSayText != nullptr)
+	{
+		if (m_pSayText->IsValidLowLevel())
+		{
+			m_pSayText = nullptr;
+		}
+	}
+}
+
+void UWidget_SayDialogItem::SetSayText(FText sSaying)
+{
+	if (m_pSayText != nullptr)
+	{
+		m_pSayText->SetText(sSaying);
+	}
 }
 
 void UWidget_SayDialogItem::SetActive(bool bActive)

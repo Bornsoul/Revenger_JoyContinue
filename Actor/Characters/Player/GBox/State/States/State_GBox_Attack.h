@@ -21,7 +21,7 @@ private:
 	FVector m_vMouseLoc;
 
 	bool m_bAttackMotionEnd = false;
-
+	bool m_bAttackRetryEnd = false;
 public:
 	virtual void Init(class UStateMng_GC* pMng) override;
 	virtual void Enter() override;

@@ -73,6 +73,8 @@ public:
 	void SpawnPortal();
 	UFUNCTION(BlueprintPure)
 		bool GetActive() { return m_bActive; }
+
+	UFUNCTION(BlueprintCallable)
 	void SetCircleActive(bool bActive);
 	
 	UFUNCTION()

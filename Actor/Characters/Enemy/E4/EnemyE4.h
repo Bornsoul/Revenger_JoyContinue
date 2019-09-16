@@ -44,8 +44,8 @@ private:
 	UPROPERTY(EditAnywhere, Category = Instance, Meta = (AllowPrivateAccess = true))
 		class TSubclassOf<class AEnemyE4_Missile> m_pInstance_Bullet;
 
-	UPROPERTY()
-		class UCpt_EnemyHp* m_pHp;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Property", meta = (AllowPrivateAccess = "true"))
+		class UCpt_EnemyHpComponent* m_pHpHud;
 
 
 public:
@@ -62,13 +62,7 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = Option)
 		float m_fCurrentHp = 2.0f;
-
-	UPROPERTY(EditAnywhere, Category = HpBar)
-		FVector m_vHpPos = FVector(40.0f, 40.0f, 40.0f);
-
-	UPROPERTY(EditAnywhere, Category = HpBar)
-		FVector2D m_vHpSize = FVector2D(40.0f, 40.0f);
-
+	
 	bool m_bHpDestroy = false;
 
 public:

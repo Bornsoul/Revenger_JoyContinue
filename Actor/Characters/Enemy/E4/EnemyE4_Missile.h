@@ -20,6 +20,9 @@ public:
 	UPROPERTY()
 		class UCpt_ParticleMng* m_pParticleMng;
 
+	//UPROPERTY()
+	//	class UCpt_GameSave* m_pSaveData;
+
 protected:
 	float m_fMoveSpeed = 2500.0f;
 	bool m_bShooted = false;
@@ -44,6 +47,8 @@ protected:
 
 	bool m_bChase = false;
 
+	bool m_bSuccessHit = false;
+
 public:
 	AEnemyE4_Missile();
 	virtual void BeginPlay() override;
@@ -56,6 +61,12 @@ public:
 	void ShootToTarget(AActor* pShooter, FVector vLocation, AActor* pTarget);
 	void Reflect(FVector vDestLoc);
 	void Explosion();
+
+	UFUNCTION(BlueprintCallable)
+		void SetSuccessHit(bool bSuccessHit) { m_bSuccessHit = bSuccessHit; }
+	
+	UFUNCTION(BlueprintPure)
+		bool GetSuccessHit() { return m_bSuccessHit; }
 
 	UFUNCTION()
 		void OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);

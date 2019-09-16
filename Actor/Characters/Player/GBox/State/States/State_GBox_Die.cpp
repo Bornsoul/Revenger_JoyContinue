@@ -3,6 +3,8 @@
 #include "State_GBox_Die.h"
 #include "Actor/Characters/GameCharacter.h"
 #include "Actor/Characters/Player/GBox/GBox.h"
+#include "Actor/SaveData/Cpt_GameSave.h"
+#include "Actor/SaveData/GameSaveMng.h"
 
 #include "Libraries/Components/SlowMotion/Cpt_SlowMotion.h"
 #include "Libraries/Components/PostProcessEffect/Cpt_PostProcessEffect.h"
@@ -10,6 +12,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Libraries/Components/MouseMng/Cpt_MouseLandMng.h"
 #include "Libraries/Components/MaterialEffect/Cpt_MaterialEffect.h"
+
 
 void UState_GBox_Die::Init(class UStateMng_GC* pMng)
 {
@@ -39,6 +42,10 @@ void UState_GBox_Die::Enter()
 	vLook.Roll = 0.0f;
 	GetRootChar()->SetActorRotation(vLook);
 
+	/*GetRootChar()->GetGameSaveMng()->Load_Data()->m_stPlayerData.m_nDeadCount += 1;
+	GetRootChar()->GetGameSaveMng()->Load_Data()->m_nTutorial = 1;
+	GetRootChar()->GetGameSaveMng()->Save_Data();*/
+
 	GetRootChar()->GetMouseMng()->SetMouseCamMove(false);
 	m_bKeyInput = false;
 }
@@ -59,7 +66,7 @@ void UState_GBox_Die::Update(float fDeltaTime)
 	{
 		if (UGameplayStatics::GetRealTimeSeconds(GetWorld()) - m_fDieTime >= 0.5f)
 		{
-			ULOG(TEXT("End KeyInput OK"));
+			//ULOG(TEXT("End KeyInput OK"));
 			m_bKeyInput = true;
 		}
 	}
@@ -68,13 +75,13 @@ void UState_GBox_Die::Update(float fDeltaTime)
 	{
 		if (GetRootChar()->GetKeyStateMng()->GetAnyKeyIsDown() == true)
 		{
-			UGameplayStatics::OpenLevel(GetRootChar()->GetWorld(), TEXT("Loading_Game"), true);
+			UGameplayStatics::OpenLevel(GetRootChar()->GetWorld(), TEXT("Loading"), true);
 			return;
 		}
 
 		if (GetRootChar()->GetKeyStateMng()->GetKeyIsJustPress(EKeys::LeftMouseButton) == true)
 		{
-			UGameplayStatics::OpenLevel(GetRootChar()->GetWorld(), TEXT("Loading_Game"), true);
+			UGameplayStatics::OpenLevel(GetRootChar()->GetWorld(), TEXT("Loading"), true);
 			return;
 		}
 	}

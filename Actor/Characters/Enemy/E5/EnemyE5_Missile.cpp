@@ -2,6 +2,7 @@
 
 #include "EnemyE5_Missile.h"
 #include "EnemyE5.h"
+#include "Actor/SaveData/Cpt_GameSave.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SphereComponent.h"
 #include "Libraries/Components/ParticleMng/Cpt_ParticleMng.h"
@@ -25,6 +26,9 @@ AEnemyE5_Missile::AEnemyE5_Missile()
 	m_pParticleMng = CreateDefaultSubobject<UCpt_ParticleMng>(TEXT("ParticleMng"));
 	m_pParticleMng->AddParticleInstance(TEXT("Explosion"), TEXT("ParticleSystem'/Game/1_Project_Main/2_Contents/Effects/Ex/StandardExplosion/P_Explosion_Small.P_Explosion_Small'"));
 	m_pParticleMng->AddParticleInstance(TEXT("Trail"), TEXT("ParticleSystem'/Game/0_Assets/MarketPlace/VFXS/VFX_Toolkit_V1/ParticleSystems/356Days/Par_Matra_01b_Trail.Par_Matra_01b_Trail'"));
+
+	//m_pSaveData = CreateDefaultSubobject<UCpt_GameSave>(TEXT("SaveData"));
+
 }
 
 void AEnemyE5_Missile::BeginPlay()
@@ -40,7 +44,7 @@ void AEnemyE5_Missile::BeginPlay()
 void AEnemyE5_Missile::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
-	m_pShooter = nullptr;
+	
 }
 
 void AEnemyE5_Missile::Tick(float DeltaTime)
@@ -131,7 +135,7 @@ void AEnemyE5_Missile::Reflect(FVector vDestLoc)
 	FVector vLocation = GetActorLocation();
 	FRotator rView = UKismetMathLibrary::FindLookAtRotation(vLocation, vDestLoc);
 	SetActorRotation(rView);
-	ULOG(TEXT("Ref"));
+	//ULOG(TEXT("Ref"));
 }
 
 float AEnemyE5_Missile::TakeDamage(float DamageAmount, struct FDamageEvent const & DamageEvent, class AController * EventInstigator, AActor * DamageCauser)
@@ -150,6 +154,8 @@ float AEnemyE5_Missile::TakeDamage(float DamageAmount, struct FDamageEvent const
 		FDamageEvent_Hit* pDamageEvent = (FDamageEvent_Hit*)&DamageEvent;
 		if (pDamageEvent != nullptr)
 		{
+			//m_pSaveData->Load_Data()->m_stPlayerData.m_nHitBulletCount += 1;
+
 			m_pDamageCauser = DamageCauser;
 			Reflect(pDamageEvent->m_vHitPoint);
 			m_fReflectDamage = DamageAmount;
@@ -162,6 +168,7 @@ float AEnemyE5_Missile::TakeDamage(float DamageAmount, struct FDamageEvent const
 
 void AEnemyE5_Missile::Explosion()
 {
+	//m_pSaveData->Save_Data("Test01", 0, -1.0f);
 	m_pParticleMng->SpawnParticleAtLocation(TEXT("Explosion"), GetWorld(), GetActorLocation(), FRotator::ZeroRotator, FVector::OneVector);
 	Destroy();
 }
@@ -203,6 +210,11 @@ void AEnemyE5_Missile::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp,
 		}
 		else
 		{
+			//m_pSaveData->Load_Data()->m_stPlayerData.m_nNonHitBulletCount += 1;
+			if (OtherActor->GetName().Left(8) == "BP_Spawn")
+			{
+				return;
+			}
 			Explosion();
 		}
 

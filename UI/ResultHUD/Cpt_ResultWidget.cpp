@@ -41,11 +41,11 @@ void UCpt_ResultWidget::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	{
 		if (m_pWidget->IsValidLowLevel())
 		{
-			m_pWidget->RemoveFromParent();
-			m_pWidget->ConditionalBeginDestroy();			
+			m_pWidget->RemoveFromParent();		
 			m_pWidget = nullptr;
 		}
 	}
+
 }
 
 void UCpt_ResultWidget::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)

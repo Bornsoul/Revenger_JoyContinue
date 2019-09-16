@@ -19,7 +19,7 @@ void UStateAI_EnemyE5_Combat_Attack::Enter()
 	m_fMoveTime_Curr = 0.0f;
 	m_fMoveTime_End = FMath::RandRange(1.0f, 3.0f);
 	m_fDist_Attack = GetRootAI()->m_fAISightRadius;
-	ULOG(TEXT("E5 Combat_Attack"));
+	//ULOG(TEXT("E5 Combat_Attack"));
 
 	//GetRootAI()->StopMovement();
 }

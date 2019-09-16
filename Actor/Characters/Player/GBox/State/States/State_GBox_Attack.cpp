@@ -23,6 +23,8 @@ void UState_GBox_Attack::Enter()
 	m_bRotation = false;
 	m_bAttack = false;
 	m_bAttackMotionEnd = false;
+	m_bAttackRetryEnd = false;
+
 	m_fAttackTime = 0.0f;
 	m_sOverlapName.Empty();
 
@@ -69,6 +71,20 @@ void UState_GBox_Attack::Update(float fDeltaTime)
 		}
 	}
 
+	if (m_bAttackRetryEnd == true)
+	{
+		if (GetRootChar()->GetKeyStateMng()->GetKeyIsJustPress(EKeys::LeftMouseButton))
+		{
+			FVector vMouse = GetRootChar()->GetMouseMng()->GetMouse_Location();
+
+			if (GetRootChar()->Control_Attack(vMouse))
+			{
+				return;
+			}
+
+		}
+	}
+
 	if (GetRootChar()->GetKeyStateMng()->GetKeyIsJustPress(EKeys::RightMouseButton))
 	{
 		if (GetRootChar()->Control_Dodge())
@@ -108,6 +124,10 @@ void UState_GBox_Attack::StateMessage(FString StateMessage)
 	else if (StateMessage == "AttackMotionEnd")
 	{
 		m_bAttackMotionEnd = true;
+	}
+	else if (StateMessage == "AttackRetry")
+	{
+		m_bAttackRetryEnd = true;
 	}
 
 }

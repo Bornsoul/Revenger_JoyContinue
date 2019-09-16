@@ -26,6 +26,7 @@ void UState_GBEC_Panic::Enter()
 		m_sAni = TEXT("Panic_Break");
 		m_fWaitTime = 1.5f;
 
+		//GetRootChar()->GetHpShield()->Hit_Shield();
 		GetRootChar()->GetBarrier()->Hit_Barrier(100);
 	}
 	else
@@ -57,12 +58,12 @@ void UState_GBEC_Panic::Exit()
 	GetRootChar()->GetAnimationMng()->StopAnimation_Montage(m_sAni);
 
 	if (GetRootChar()->GetBarrier()->GetActiveState() == false)
-	{
+	{		
+		GetRootChar()->GetHpShield()->Heal_Shield(true);
 		GetRootChar()->Active_Barrier();
 	}
 
-	
-	
+
 }
 
 void UState_GBEC_Panic::Update(float fDeltaTime)

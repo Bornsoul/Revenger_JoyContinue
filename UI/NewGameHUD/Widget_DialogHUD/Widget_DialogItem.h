@@ -27,6 +27,9 @@ private:
 	UPROPERTY()
 		class URichTextBlock* m_pRich_Text;
 
+	UPROPERTY()
+		class UTextBlock* m_pTxt_Count;
+
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Widget Option", meta = (AllowPrivateAccess = "true"))
 		bool m_bImageList_Random = true;
 
@@ -63,9 +66,9 @@ private:
 	FString m_sAddStr;*/
 
 public:
-	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	virtual void NativeDestruct() override;
 
 	UFUNCTION(BlueprintCallable)
 		void SetActive(bool bActive);
@@ -73,6 +76,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 		void SetPlayAnimation(FString sAniName, bool bRevers = false);
 
+	UFUNCTION(BlueprintCallable)
+		void SetCountText(int32 nCurIndex, int32 nMaxIndex);
 
 	void SetDialogData(bool bRandom, TArray<class UTexture2D*> pTextures, FText sName, FText sNameSub, FText sText);
 	void Execute_StringDialog(FString sDialog);
@@ -80,5 +85,6 @@ public:
 
 	void Tick_StringDialog(float fDeltaTime);
 
+	FORCEINLINE void SetDialogTextSpeed(float fSpeed = 0.055f) { m_fStoryDialog_End = fSpeed; }
 	FORCEINLINE bool GetDialogPlaying() { return m_bStoryDialog; }
 };

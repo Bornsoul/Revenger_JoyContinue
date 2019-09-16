@@ -29,7 +29,8 @@ public:
 	UWidgetAni_Mng();
 
 	void Init(class UUserWidget* pWidget);
-	
+	void Destroy();
+
 	//! 해당 애니메이션 플레이
 	//! sAniName = 애니메이션 이름	
 	void SetPlayAnimation(FString sAniName, EUMGSequencePlayMode::Type PlayMode = EUMGSequencePlayMode::Forward, float fStartTime = 0.0f, int32 nLoop = 1, float fAniSpeed = 1.0f);

@@ -181,7 +181,7 @@ void UWidget_SkillItem::Active_CoolTime(float fCoolTime)
 	EmptyChecks(m_pCoolTime, m_pCoolTime_Text);
 	if (m_bCoolTimeActive == true)
 	{
-		ULOG(TEXT("CoolTime InProgress"));
+		//ULOG(TEXT("CoolTime InProgress"));
 		return;
 	}
 
@@ -273,7 +273,7 @@ void UWidget_SkillItem::Active_CoolTimeCount()
 
 	if (m_nCoolTimeCount_Val <= 1)
 	{
-		ULOG(TEXT("CoolTimeCount is Empty"));
+		//ULOG(TEXT("CoolTimeCount is Empty"));
 		Active_CoolTime(2.0f);
 		m_bCoolTimeCount_WaitActive = true;
 		m_nCoolTimeCount_Val = 0;
@@ -296,7 +296,7 @@ void UWidget_SkillItem::DeActive_CoolTimeCount()
 {
 	if (m_nCoolTimeCount_Val >= m_pCountList.Num()-1)
 	{
-		ULOG(TEXT("CoolTimeCount is Full"));
+		//ULOG(TEXT("CoolTimeCount is Full"));
 		m_nCoolTimeCount_Val = m_pCountList.Num();
 		SetCountUseActive(m_nCoolTimeCount_Val);
 

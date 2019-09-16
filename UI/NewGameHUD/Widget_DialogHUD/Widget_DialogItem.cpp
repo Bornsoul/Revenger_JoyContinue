@@ -1,15 +1,10 @@
 #include "Widget_DialogItem.h"
 #include "Components/Image.h"
 #include "Components/RichTextBlock.h"
+#include "Components/TextBlock.h"
 #include "UI/Core/WidgetAni_Mng.h"
 #include "Engine/Texture2D.h"
 #include "Kismet/KismetMathLibrary.h"
-
-void UWidget_DialogItem::NativePreConstruct()
-{
-	Super::NativePreConstruct();
-
-}
 
 void UWidget_DialogItem::NativeConstruct()
 {
@@ -56,6 +51,13 @@ void UWidget_DialogItem::NativeConstruct()
 	if (m_pRich_Text == nullptr) return;
 	m_pRich_Text->SetText(m_sText);
 
+	m_pTxt_Count = Cast<UTextBlock>(GetWidgetFromName(TEXT("CountTxt")));
+	if (m_pTxt_Count == nullptr)
+	{
+		return;
+	}
+
+
 	SetActive(true);
 }
 
@@ -67,11 +69,56 @@ void UWidget_DialogItem::NativeTick(const FGeometry& MyGeometry, float InDeltaTi
 
 }
 
+void UWidget_DialogItem::NativeDestruct()
+{
+	Super::NativeDestruct();
+
+	if (m_pWidgetAni != nullptr)
+	{
+		if (m_pWidgetAni->IsValidLowLevel())
+		{
+			m_pWidgetAni = nullptr;
+		}
+	}
+
+	if (m_pRich_Text != nullptr)
+	{
+		if (m_pRich_Text->IsValidLowLevel())
+		{
+			m_pRich_Text = nullptr;
+		}
+	}
+
+	if (m_pRich_Name != nullptr)
+	{
+		if (m_pRich_Name->IsValidLowLevel())
+		{
+			m_pRich_Name = nullptr;
+		}
+	}
+
+	if (m_pImg_Icon != nullptr)
+	{
+		if (m_pImg_Icon->IsValidLowLevel())
+		{
+			m_pImg_Icon = nullptr;
+		}
+	}
+
+	m_pImgList.Empty();
+}
+
 void UWidget_DialogItem::SetPlayAnimation(FString sAniName, bool bRevers)
 {
 	if (m_pWidgetAni == nullptr) return;
 	m_bRevers = bRevers;
 	m_pWidgetAni->SetPlayAnimation(sAniName, m_bRevers == true ? EUMGSequencePlayMode::Reverse : EUMGSequencePlayMode::Forward);
+}
+
+void UWidget_DialogItem::SetCountText(int32 nCurIndex, int32 nMaxIndex)
+{	
+	FString sStr = FString::Printf(TEXT("%d / %d"), nCurIndex+1, nMaxIndex);
+	m_pTxt_Count->SetText(FText::FromString(sStr));
 }
 
 void UWidget_DialogItem::SetActive(bool bActive)

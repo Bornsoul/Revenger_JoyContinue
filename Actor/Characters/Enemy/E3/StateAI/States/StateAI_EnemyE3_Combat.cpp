@@ -25,7 +25,7 @@ void UStateAI_EnemyE3_Combat::Enter()
 
 	if (m_bDistCombat == false)
 	{
-		if (fRand < 80)
+		if (fRand < 90.0f)
 		{
 			// 		AActor* pTarget = GetRootAI()->DetectInPerception();
 			// 		if (pTarget == nullptr)
@@ -46,7 +46,7 @@ void UStateAI_EnemyE3_Combat::Enter()
 			ChangeCombatState(static_cast<int32>(E_StateAI_EnemyE3_Combat::E_Combat_DistMove));
 
 		}
-		ULOG(TEXT("Combat2"));
+		//ULOG(TEXT("Combat2"));
 	}
 	else
 	{
@@ -96,7 +96,7 @@ void UStateAI_EnemyE3_Combat::ChangeCombatState(int32 eState)
 }
 void UStateAI_EnemyE3_Combat::SetDistanceCombat()
 {
-	ULOG(TEXT("Combat"));
+	//ULOG(TEXT("Combat"));
 	//ChangeCombatState(static_cast<int32>(E_StateAI_EnemyE3_Combat::E_Combat_Crazy));
 	m_bDistCombat = true;	
 }
